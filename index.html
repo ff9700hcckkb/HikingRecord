@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hiking Logs - Filterable</title>
+    <title>Hiking Logs - Precision Mode</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -11,8 +11,6 @@
         .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
         .modal-active { display: flex; align-items: center; justify-content: center; }
         .filter-btn.active { background-color: #10b981; color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
-        /* 隱藏過濾後不符的年份 */
-        .year-section.hidden-section { display: none; }
     </style>
 </head>
 <body class="font-sans antialiased">
@@ -20,14 +18,14 @@
     <div class="max-w-2xl mx-auto py-12 px-6">
         <header class="mb-8 border-l-4 border-emerald-500 pl-6">
             <h1 class="text-4xl font-black tracking-tight text-white">山系記錄</h1>
-            <p class="text-slate-400 mt-2 font-medium">個人登山軌跡與日誌資料庫</p>
+            <p class="text-slate-400 mt-2 font-medium">個人登山軌跡資料庫</p>
         </header>
 
         <div id="filter-container" class="flex flex-wrap gap-2 mb-10">
             <button onclick="filterRecords('全部')" class="filter-btn active px-4 py-2 rounded-full bg-slate-800 text-slate-300 text-sm font-bold border border-slate-700 transition all hover:border-emerald-500">全部</button>
-            </div>
+        </div>
         
-        <div id="loading" class="text-center py-20 text-slate-500 animate-pulse">連線至 Google Sheets...</div>
+        <div id="loading" class="text-center py-20 text-slate-500 animate-pulse">定位欄位資料中...</div>
         <div id="record-container" class="space-y-10"></div>
     </div>
 
@@ -41,13 +39,20 @@
 
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRssVI_ETyZAWp_ZzR6NSQr49bPhLajgVl83G1PWP2Ytb7axuYZQEtNf9NgpfJijFRQfdauQnulc0fS/pub?output=csv';
-        let allData = []; // 儲存原始資料
+        let allData = [];
+        let colMap = {}; // 用於儲存欄位名稱與索引的對應關係
 
         Papa.parse(csvUrl, {
             download: true,
             header: false,
             skipEmptyLines: true,
             complete: function(results) {
+                const headerRow = results.data[0];
+                // 自動建立欄位映射表，例如 colMap["人員"] = 3
+                headerRow.forEach((colName, index) => {
+                    if (colName) colMap[colName.trim()] = index;
+                });
+
                 allData = results.data.slice(1);
                 initFilters(allData);
                 renderData(allData);
@@ -55,10 +60,10 @@
             }
         });
 
-        // 1. 初始化按鈕：自動抓取 CSV 裡的所有分類
         function initFilters(data) {
+            const catIdx = colMap["分類"];
             const categories = new Set();
-            data.forEach(row => { if(row[2]) categories.add(row[2]); }); // C欄是分類
+            data.forEach(row => { if(row[catIdx]) categories.add(row[catIdx]); });
             
             const filterContainer = document.getElementById('filter-container');
             categories.forEach(cat => {
@@ -70,31 +75,32 @@
             });
         }
 
-        // 2. 篩選功能
         function filterRecords(category) {
-            // 切換按鈕樣式
             const btns = document.querySelectorAll('.filter-btn');
             btns.forEach(btn => {
                 btn.classList.remove('active');
                 if(btn.innerText === category) btn.classList.add('active');
             });
 
-            // 重新渲染資料
             if (category === '全部') {
                 renderData(allData);
             } else {
-                const filtered = allData.filter(row => row[2] === category);
+                const catIdx = colMap["分類"];
+                const filtered = allData.filter(row => row[catIdx] === category);
                 renderData(filtered);
             }
         }
 
         function renderData(data) {
             const container = document.getElementById('record-container');
-            container.innerHTML = ''; // 清空舊資料
+            container.innerHTML = '';
+            
+            const dateIdx = colMap["日期"];
+            const nameIdx = colMap["地點/名稱"];
             
             const grouped = {};
             data.forEach(row => {
-                let dateStr = row[0] || ""; 
+                let dateStr = row[dateIdx] || ""; 
                 if(!dateStr) return;
 
                 dateStr = dateStr.replace(/\./g, '/');
@@ -102,31 +108,25 @@
                 let mmdd = dateStr.includes('/') ? dateStr.substring(dateStr.indexOf('/') + 1) : dateStr;
 
                 if (!grouped[year]) grouped[year] = [];
-                grouped[year].push({ mmdd, name: row[1] || "未命名", raw: row });
+                grouped[year].push({ mmdd, name: row[nameIdx] || "未命名", raw: row });
             });
 
             const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
 
-            if(sortedYears.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-600 py-10 text-lg italic">此分類尚無記錄</div>';
-                return;
-            }
-
             sortedYears.forEach(year => {
                 const count = grouped[year].length;
                 const yearDiv = document.createElement('div');
-                yearDiv.className = 'year-section';
                 yearDiv.innerHTML = `
                     <div class="flex items-center mb-6">
                         <div class="flex items-baseline">
                             <span class="bg-emerald-600 text-white px-4 py-1 rounded-md text-lg font-bold shadow-lg">${year} 年</span>
-                            <span class="ml-3 text-slate-500 text-sm font-medium">今年共 ${count} 筆記錄</span>
+                            <span class="ml-3 text-slate-500 text-sm font-medium">共 ${count} 筆記錄</span>
                         </div>
                         <div class="flex-grow h-px bg-slate-800 ml-4"></div>
                     </div>
                     <div class="pl-2 space-y-3">
                         ${grouped[year].map(item => `
-                            <div class="flex items-start group cursor-pointer hover:bg-slate-800/50 p-3 rounded-xl transition duration-200" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
+                            <div class="flex items-start group cursor-pointer hover:bg-slate-800/50 p-3 rounded-xl transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
                                 <span class="text-slate-700 font-mono mt-1 w-6 shrink-0 group-hover:text-emerald-500 transition">└</span>
                                 <div class="flex flex-col sm:flex-row sm:items-center">
                                     <span class="text-emerald-500 font-mono font-bold w-32 shrink-0 tracking-tight">${item.mmdd}</span>
@@ -142,25 +142,38 @@
 
         function showDetail(row) {
             const modal = document.getElementById('detail-modal');
-            document.getElementById('modal-title').innerText = row[1];
+            const nameIdx = colMap["地點/名稱"];
+            document.getElementById('modal-title').innerText = row[nameIdx];
             
-            const labels = ['日期', '地點/名稱', '分類', '人員', '距離', '天數', '備註', 'GPX'];
+            // 這些是您想要顯示在細項中的標籤與它們在 Google Sheets 裡的精確標題
+            const displayFields = [
+                { label: '日期', key: '日期' },
+                { label: '分類', key: '分類' },
+                { label: '人員', key: '人員' },
+                { label: '距離', key: '距離' },
+                { label: '天數', key: '天數' },
+                { label: '備註', key: '備註' },
+                { label: 'GPX', key: 'GPX' }
+            ];
+
             let html = `<div class="grid gap-4">`;
             
-            labels.forEach((label, index) => {
-                const val = row[index];
-                if(val && index !== 1) {
-                    if(label === 'GPX' || (val.toString().startsWith('http'))) {
+            displayFields.forEach(field => {
+                const idx = colMap[field.key];
+                const val = row[idx];
+                
+                if(val && field.key !== '地點/名稱') {
+                    if(field.key === 'GPX' || (val.toString().startsWith('http'))) {
                         html += `
                             <div class="pt-4">
-                                <a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-500 shadow-lg shadow-emerald-900/40 transition">
+                                <a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-500 shadow-lg transition">
                                     下載 / 查看 GPX
                                 </a>
                             </div>`;
                     } else {
                         html += `
                             <div class="flex border-b border-slate-700 pb-3">
-                                <span class="w-20 text-slate-500 shrink-0 font-bold uppercase text-xs mt-1">${label}</span>
+                                <span class="w-20 text-slate-500 shrink-0 font-bold uppercase text-xs mt-1">${field.label}</span>
                                 <span class="text-slate-200 ml-2 leading-relaxed">${val}</span>
                             </div>`;
                     }
