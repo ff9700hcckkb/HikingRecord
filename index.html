@@ -12,13 +12,27 @@
         .modal-active { display: flex; align-items: center; justify-content: center; }
         .filter-btn.active { background-color: #10b981; color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); border-color: #10b981; }
         .year-btn.active { background-color: #3b82f6; color: white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); border-color: #3b82f6; }
+        
+        /* 回到頂端按鈕樣式 */
+        #back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: none;
+            z-index: 40;
+            transition: all 0.3s ease;
+        }
+        #back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
     </style>
 </head>
 <body class="font-sans antialiased">
 
     <div class="max-w-2xl mx-auto py-12 px-6">
         <header class="mb-10 border-l-4 border-emerald-500 pl-6">
-            <h1 class="text-4xl font-black tracking-tight text-white">登山記錄</h1>
+            <h1 class="text-4xl font-black tracking-tight text-white">山系記錄</h1>
             <p class="text-slate-400 mt-2 font-medium">個人登山軌跡</p>
         </header>
 
@@ -40,9 +54,15 @@
         <div id="record-container" class="space-y-10"></div>
     </div>
 
+    <button id="back-to-top" onclick="scrollToTop()" class="bg-slate-800/80 backdrop-blur-md text-emerald-500 border border-emerald-500/30 p-3 rounded-full shadow-2xl">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" />
+        </svg>
+    </button>
+
     <div id="detail-modal" class="modal p-4" onclick="closeModal()">
         <div class="bg-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative border border-slate-700" onclick="event.stopPropagation()">
-            <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-500 hover:text-white text-3xl">&times;</button>
+            <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-500 hover:text-white text-3xl transition">&times;</button>
             <h2 id="modal-title" class="text-2xl font-bold text-emerald-400 border-b border-slate-700 pb-5 mb-6"></h2>
             <div id="modal-body" class="space-y-5 text-sm"></div>
         </div>
@@ -55,19 +75,16 @@
         let currentCat = '全部';
         let colMap = {};
 
+        // 初始化解析
         Papa.parse(csvUrl, {
             download: true,
             header: false,
             skipEmptyLines: true,
             complete: function(results) {
                 if (results.data.length === 0) return;
-                
                 const headerRow = results.data[0];
-                headerRow.forEach((colName, index) => {
-                    if (colName) colMap[colName.trim()] = index;
-                });
+                headerRow.forEach((colName, index) => { if (colName) colMap[colName.trim()] = index; });
 
-                // 預處理資料：補齊年份與分類資訊
                 const dateIdx = getIdx("日期");
                 const catIdx = getIdx("分類");
                 const routeIdx = getIdx("路線");
@@ -81,13 +98,27 @@
                         name: row[routeIdx] || "未命名行程",
                         raw: row
                     };
-                }).filter(item => item.year.length === 4); // 過濾無效日期
+                }).filter(item => item.year.length === 4);
 
                 initFilterButtons();
                 applyFilters();
                 document.getElementById('loading').remove();
             }
         });
+
+        // 偵測捲動顯示按鈕
+        window.onscroll = function() {
+            const btn = document.getElementById("back-to-top");
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                btn.style.display = "block";
+            } else {
+                btn.style.display = "none";
+            }
+        };
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
         function getIdx(key) {
             if (colMap[key] !== undefined) return colMap[key];
@@ -98,7 +129,6 @@
         function initFilterButtons() {
             const years = [...new Set(allProcessedData.map(d => d.year))].sort((a, b) => b - a);
             const cats = [...new Set(allProcessedData.map(d => d.category))];
-
             const yearContainer = document.getElementById('year-filter');
             years.forEach(y => {
                 const btn = document.createElement('button');
@@ -107,7 +137,6 @@
                 btn.onclick = (e) => updateYear(y, e.target);
                 yearContainer.appendChild(btn);
             });
-
             const catContainer = document.getElementById('cat-filter');
             cats.forEach(c => {
                 const btn = document.createElement('button');
@@ -144,26 +173,23 @@
         function renderData(data) {
             const container = document.getElementById('record-container');
             container.innerHTML = '';
-            
             const grouped = {};
             data.forEach(item => {
                 if (!grouped[item.year]) grouped[item.year] = [];
                 grouped[item.year].push(item);
             });
-
             const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
             if(sortedYears.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-600 py-10">符合條件的記錄不存在</div>';
+                container.innerHTML = '<div class="text-center text-slate-600 py-10 italic">對不起，目前無符合條件的記錄</div>';
                 return;
             }
-
             sortedYears.forEach(year => {
                 const yearDiv = document.createElement('div');
                 yearDiv.innerHTML = `
                     <div class="flex items-center mb-6">
                         <div class="flex items-baseline">
                             <span class="bg-blue-600 text-white px-4 py-1 rounded-md text-lg font-bold shadow-lg">${year} 年</span>
-                            <span class="ml-3 text-slate-500 text-sm font-medium">共 ${grouped[year].length} 筆</span>
+                            <span class="ml-3 text-slate-500 text-sm font-medium italic">共 ${grouped[year].length} 筆</span>
                         </div>
                         <div class="flex-grow h-px bg-slate-800 ml-4"></div>
                     </div>
@@ -187,17 +213,11 @@
             const modal = document.getElementById('detail-modal');
             const routeIdx = getIdx("路線");
             document.getElementById('modal-title').innerText = row[routeIdx] || "行程詳情";
-            
             const displayFields = [
-                { label: '日期', key: '日期' },
-                { label: '分類', key: '分類' },
-                { label: '人員', key: '人員' },
-                { label: '距離', key: '距離' },
-                { label: '天數', key: '天數' },
-                { label: '備註', key: '備註' },
-                { label: 'GPX', key: 'GPX' }
+                { label: '日期', key: '日期' }, { label: '分類', key: '分類' },
+                { label: '人員', key: '人員' }, { label: '距離', key: '距離' },
+                { label: '天數', key: '天數' }, { label: '備註', key: '備註' }, { label: 'GPX', key: 'GPX' }
             ];
-
             let html = `<div class="grid gap-4">`;
             displayFields.forEach(field => {
                 const idx = getIdx(field.key);
@@ -215,9 +235,7 @@
             modal.classList.add('modal-active');
         }
 
-        function closeModal() {
-            document.getElementById('detail-modal').classList.remove('modal-active');
-        }
+        function closeModal() { document.getElementById('detail-modal').classList.remove('modal-active'); }
     </script>
 </body>
 </html>
