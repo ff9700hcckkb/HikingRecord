@@ -149,7 +149,7 @@
                             <div class="flex items-center group cursor-pointer hover:bg-slate-800/30 p-3 rounded-xl transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
                                 <span class="text-emerald-500 font-mono font-bold w-24 shrink-0 text-xs">${item.mmdd}</span>
                                 <span class="text-sm font-medium truncate" style="color: ${item.isFuture ? '#FFAF60' : '#e2e8f0'};">
-                                    ${item.name} ${item.isFuture ? '<span class="text-[10px] opacity-70 ml-1">(規劃中)</span>' : ''}
+                                    ${item.name} ${item.isFuture ? '<span class="text-[10px] opacity-70 ml-1">(預排)</span>' : ''}
                                 </span>
                             </div>
                         `).join('')}
