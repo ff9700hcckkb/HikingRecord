@@ -18,70 +18,67 @@
         input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
     </style>
 </head>
-<body class="font-sans antialiased">
-
-    <div class="max-w-2xl mx-auto py-8 px-5">
+<body class="font-sans antialiased text-[16px]"> <div class="max-w-2xl mx-auto py-8 px-5">
         <header class="mb-6 flex justify-between items-end">
             <div>
-                <h1 class="text-3xl font-black text-white leading-none">登山記錄</h1>
-                <p class="text-slate-500 text-sm mt-2"></p>
+                <h1 class="text-4xl font-black text-white leading-none">登山記錄</h1>
+                <p class="text-slate-500 text-base mt-2"></p>
             </div>
-            <div id="total-count" class="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20 uppercase">Loading...</div>
+            <div id="total-count" class="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20 uppercase">Loading...</div>
         </header>
 
         <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-4 mb-8 shadow-xl">
-            <div class="relative mb-4">
+            <div class="relative mb-5">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <svg class="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
                 <input type="search" id="keyword-search" oninput="handleSearch()" 
-                    class="block w-full pl-10 pr-10 py-2.5 bg-slate-900/80 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all outline-none" 
+                    class="block w-full pl-11 pr-10 py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-base text-white placeholder-slate-500 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all outline-none" 
                     placeholder="搜尋路線、人員或關鍵字...">
                 <button id="clear-search" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-white">
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
                 </button>
             </div>
 
-            <button onclick="toggleFilter()" class="w-full flex justify-between items-center text-slate-400 font-bold text-sm hover:text-slate-200 transition-colors">
+            <button onclick="toggleFilter()" class="w-full flex justify-between items-center text-slate-400 font-bold text-base hover:text-slate-200 transition-colors">
                 <div class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
                     <span>進階條件篩選</span>
-                    <span id="active-filter-hint" class="text-[10px] font-normal text-slate-600 ml-2">全部 / 全部</span>
+                    <span id="active-filter-hint" class="text-xs font-normal text-slate-600 ml-2">全部 / 全部</span>
                 </div>
-                <svg id="chevron" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                <svg id="chevron" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </button>
 
             <div id="filter-panel" class="filter-content">
-                <div class="pt-4 space-y-4 border-t border-slate-700/50 mt-4">
+                <div class="pt-5 space-y-5 border-t border-slate-700/50 mt-5">
                     <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">年份</label>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">年份</label>
                         <div id="year-filter" class="flex flex-wrap gap-2">
-                            <button onclick="updateYear('全部', this)" class="year-btn active px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all">全部</button>
+                            <button onclick="updateYear('全部', this)" class="year-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all">全部</button>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">分類</label>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">分類</label>
                         <div id="cat-filter" class="flex flex-wrap gap-2">
-                            <button onclick="updateCat('全部', this)" class="filter-btn active px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all">全部</button>
+                            <button onclick="updateCat('全部', this)" class="filter-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all">全部</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div id="record-container" class="space-y-10"></div>
+        <div id="record-container" class="space-y-12"></div>
     </div>
 
-    <button id="back-to-top" onclick="scrollToTop()" class="bg-emerald-600 text-white p-3 rounded-full shadow-lg shadow-emerald-900/40 border border-emerald-400/20">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" /></svg>
+    <button id="back-to-top" onclick="scrollToTop()" class="bg-emerald-600 text-white p-4 rounded-full shadow-lg shadow-emerald-900/40 border border-emerald-400/20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" /></svg>
     </button>
 
     <div id="detail-modal" class="modal p-4" onclick="closeModal()">
-        <div class="bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative border border-slate-700" onclick="event.stopPropagation()">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-500 hover:text-white text-2xl">&times;</button>
-            <h2 id="modal-title" class="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-4 mb-4"></h2>
-            <div id="modal-body" class="space-y-4 text-sm"></div>
-        </div>
+        <div class="bg-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative border border-slate-700" onclick="event.stopPropagation()">
+            <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-500 hover:text-white text-3xl">&times;</button>
+            <h2 id="modal-title" class="text-2xl font-bold text-emerald-400 border-b border-slate-700 pb-5 mb-5"></h2>
+            <div id="modal-body" class="space-y-5 text-base"></div> </div>
     </div>
 
     <script>
@@ -99,14 +96,10 @@
             complete: function(results) {
                 if (results.data.length === 0) return;
                 results.data[0].forEach((col, i) => { if (col) colMap[col.trim()] = i; });
-
                 const dateIdx = getIdx("日期"), catIdx = getIdx("分類"), routeIdx = getIdx("路線"), distIdx = getIdx("距離");
-
                 allProcessedData = results.data.slice(1).map(row => {
                     let d = row[dateIdx] ? row[dateIdx].toString().trim().replace(/\./g, '/') : "";
-                    // 檢查是否為未來行程 (距離欄位寫 "未確定")
                     const isFuture = row[distIdx] && row[distIdx].toString().includes("未確定");
-                    
                     return {
                         year: d.substring(0, 4),
                         mmdd: d.includes('/') ? d.substring(d.indexOf('/') + 1) : d,
@@ -117,7 +110,6 @@
                         raw: row
                     };
                 }).filter(item => item.year.length === 4);
-
                 initFilterButtons();
                 applyFilters();
                 updateTotalCount(allProcessedData.length);
@@ -134,23 +126,24 @@
             });
             const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
             if(sortedYears.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-600 py-10 text-sm">找不到符合條件的記錄</div>';
+                container.innerHTML = '<div class="text-center text-slate-600 py-10 text-base italic">找不到符合條件的記錄</div>';
                 return;
             }
             sortedYears.forEach(year => {
                 const div = document.createElement('div');
                 div.innerHTML = `
-                    <div class="flex items-center mb-4">
-                        <span class="bg-blue-600/20 text-blue-400 px-3 py-0.5 rounded-md text-[10px] font-black border border-blue-600/30 uppercase tracking-tighter">${year}</span>
-                        <div class="flex-grow h-px bg-slate-800 ml-3"></div>
+                    <div class="flex items-center mb-5">
+                        <span class="bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-black uppercase tracking-widest shadow-md">${year}</span>
+                        <div class="flex-grow h-px bg-slate-800 ml-4"></div>
                     </div>
-                    <div class="space-y-1">
+                    <div class="space-y-2">
                         ${grouped[year].map(item => `
-                            <div class="flex items-center group cursor-pointer hover:bg-slate-800/30 p-3 rounded-xl transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
-                                <span class="text-emerald-500 font-mono font-bold w-24 shrink-0 text-xs">${item.mmdd}</span>
-                                <span class="text-sm font-medium truncate" style="color: ${item.isFuture ? '#FFAF60' : '#e2e8f0'};">
-                                    ${item.name} ${item.isFuture ? '<span class="text-[10px] opacity-70 ml-1">(預排)</span>' : ''}
+                            <div class="flex items-center group cursor-pointer hover:bg-slate-800/40 p-4 rounded-2xl transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
+                                <span class="text-emerald-500 font-mono font-bold w-24 shrink-0 text-sm tracking-tight">${item.mmdd}</span>
+                                <span class="text-base font-bold truncate flex-grow" style="color: ${item.isFuture ? '#FFAF60' : '#f8fafc'};">
+                                    ${item.name} ${item.isFuture ? '<span class="text-xs font-normal opacity-60 ml-2">(規劃中)</span>' : ''}
                                 </span>
+                                <svg class="h-4 w-4 text-slate-700 group-hover:text-emerald-500 transition ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                             </div>
                         `).join('')}
                     </div>
@@ -159,7 +152,6 @@
             });
         }
 
-        // --- 以下函式維持不變 ---
         function handleSearch() {
             const input = document.getElementById('keyword-search');
             const clearBtn = document.getElementById('clear-search');
@@ -201,12 +193,12 @@
             const yc = document.getElementById('year-filter'), cc = document.getElementById('cat-filter');
             years.forEach(y => {
                 const b = document.createElement('button');
-                b.className = 'year-btn px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all';
+                b.className = 'year-btn px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
                 b.innerText = y; b.onclick = (e) => updateYear(y, e.target); yc.appendChild(b);
             });
             cats.forEach(c => {
                 const b = document.createElement('button');
-                b.className = 'filter-btn px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all';
+                b.className = 'filter-btn px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
                 b.innerText = c; b.onclick = (e) => updateCat(c, e.target); cc.appendChild(b);
             });
         }
@@ -214,14 +206,14 @@
             const modal = document.getElementById('detail-modal');
             document.getElementById('modal-title').innerText = row[getIdx("路線")] || "行程詳情";
             const fields = [{l:'日期',k:'日期'},{l:'分類',k:'分類'},{l:'人員',k:'人員'},{l:'距離',k:'距離'},{l:'天數',k:'天數'},{l:'備註',k:'備註'},{l:'GPX',k:'GPX'}];
-            let html = `<div class="grid gap-3">`;
+            let html = `<div class="grid gap-4">`;
             fields.forEach(f => {
                 const val = row[getIdx(f.k)];
                 if(val && f.k !== '路線') {
                     if(val.toString().includes('http')) {
-                        html += `<div class="pt-2"><a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-3 rounded-xl text-sm">查看 GPX</a></div>`;
+                        html += `<div class="pt-4"><a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-4 rounded-2xl text-base shadow-lg">查看 GPX 軌跡檔案</a></div>`;
                     } else {
-                        html += `<div class="flex border-b border-slate-700/50 pb-2"><span class="w-16 text-slate-500 shrink-0 font-bold text-xs uppercase">${f.l}</span><span class="text-slate-300 ml-2 leading-relaxed">${val}</span></div>`;
+                        html += `<div class="flex border-b border-slate-700/50 pb-3"><span class="w-20 text-slate-500 shrink-0 font-bold text-sm uppercase tracking-wide">${f.l}</span><span class="text-slate-300 ml-2 leading-relaxed text-base">${val}</span></div>`;
                     }
                 }
             });
