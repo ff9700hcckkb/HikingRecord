@@ -247,14 +247,21 @@
                         // --- 在詳情頁解析多重標籤 ---
                         const cats = val.toString().split(/[,，\s]+/).filter(c => c);
                         const tagHtml = cats.map(cat => {
-                            let colorClass = "border-slate-600 text-slate-400 bg-slate-400/5"; 
-                            if(cat.includes("小百岳")) colorClass = "border-emerald-500 text-emerald-500 bg-emerald-500/10";
-                            if(cat.includes("縱走")) colorClass = "border-amber-500 text-amber-500 bg-amber-500/10";
-                            if(cat.includes("健行")) colorClass = "border-sky-500 text-sky-500 bg-sky-500/10";
-                            if(cat.includes("百岳")) colorClass = "border-purple-500 text-purple-500 bg-purple-500/10";
-                            if(cat.includes("特殊")) colorClass = "border-rose-500 text-rose-500 bg-rose-500/10";
-                            return `<span class="px-2 py-0.5 border ${colorClass} text-xs rounded font-bold mr-1.5 mb-1.5 inline-block">${cat}</span>`;
-                        }).join('');
+    let colorClass = "border-slate-600 text-slate-400 bg-slate-400/5"; // 預設灰色
+    
+    if(cat.includes("小百岳")) colorClass = "border-emerald-500 text-emerald-500 bg-emerald-500/10";
+    if(cat.includes("百岳")) colorClass = "border-purple-500 text-purple-500 bg-purple-500/10";
+    if(cat.includes("健行")) colorClass = "border-sky-500 text-sky-500 bg-sky-500/10";
+    
+    // --- 新增中級山與縱走 ---
+    if(cat.includes("中級山")) colorClass = "border-lime-500 text-lime-500 bg-lime-500/10";
+    if(cat.includes("縱走")) colorClass = "border-orange-500 text-orange-500 bg-orange-500/10";
+    
+    // --- 特殊 ---
+    if(cat.includes("特殊")) colorClass = "border-rose-500 text-rose-500 bg-rose-500/10";
+    
+    return `<span class="px-2 py-0.5 border ${colorClass} text-xs rounded font-bold mr-1.5 mb-1.5 inline-block">${cat}</span>`;
+}).join('');
                         
                         html += `<div class="flex flex-col border-b border-slate-700/50 pb-3">
                                     <span class="text-slate-500 font-bold text-sm uppercase tracking-wide mb-2">${f.l}</span>
