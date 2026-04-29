@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登山記錄展示</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .accordion-content { transition: max-height 0.3s ease-out; overflow: hidden; max-height: 0; }
+        .accordion-open .accordion-content { max-height: 2000px; }
+        .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+        .modal-active { display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <div class="max-w-4xl mx-auto py-12 px-6">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-slate-800 mb-2">My Hiking Logs</h1>
+            <p class="text-slate-500 text-lg">登山記錄</p>
+        </header>
+        
+        <div id="loading" class="text-center py-20 text-slate-400 animate-pulse text-xl">資料讀取中...</div>
+        <div id="record-container" class="space-y-6"></div>
+    </div>
+
+    <div id="detail-modal" class="modal p-4" onclick="closeModal()">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl relative" onclick="event.stopPropagation()">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-3xl">&times;</button>
+            <h2 id="modal-title" class="text-2xl font-bold text-slate-800 border-b pb-4 mb-6"></h2>
+            <div id="modal-body" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRssVI_ETyZAWp_ZzR6NSQr49bPhLajgVl83G1PWP2Ytb7axuYZQEtNf9NgpfJijFRQfdauQnulc0fS/pub?output=csv';
+
+        Papa.parse(csvUrl, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                renderData(results.data);
+                document.getElementById('loading').remove();
+            }
+        });
+
+        function renderData(data) {
+            const container = document.getElementById('record-container');
+            const grouped = {};
+
+            data.forEach(row => {
+                if(!row['日期']) return;
+                const year = row['日期'].split('/')[0] || row['日期'].split('-')[0];
+                if (!grouped[year]) grouped[year] = [];
+                grouped[year].push(row);
+            });
+
+            // 年份由新到舊排序
+            const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
+
+            sortedYears.forEach(year => {
+                const section = document.createElement('div');
+                section.className = 'bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden';
+                
+                section.innerHTML = `
+                    <div class="bg-slate-800 text-white px-6 py-4 cursor-pointer flex justify-between items-center hover:bg-slate-700 transition" onclick="toggleAccordion(this.parentElement)">
+                        <span class="text-xl font-bold tracking-wider">${year} 年 <span class="ml-2 text-sm font-normal text-slate-300">(${grouped[year].length} 筆記錄)</span></span>
+                        <svg class="w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="divide-y divide-slate-100">
+                            ${grouped[year].map(item => `
+                                <div class="px-6 py-5 hover:bg-slate-50 transition cursor-pointer group" onclick='showDetail(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <div class="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition">${item['地點/名稱'] || '未命名行程'}</div>
+                                            <div class="text-sm text-slate-500 mt-1">
+                                                <span class="bg-slate-100 px-2 py-0.5 rounded mr-2">${item['分類'] || '一般'}</span>
+                                                ${item['日期']}
+                                            </div>
+                                        </div>
+                                        <div class="text-slate-300 group-hover:text-slate-500">&rarr;</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+        }
+
+        function toggleAccordion(el) {
+            el.classList.toggle('accordion-open');
+            const svg = el.querySelector('svg');
+            svg.style.transform = el.classList.contains('accordion-open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function showDetail(item) {
+            const modal = document.getElementById('detail-modal');
+            document.getElementById('modal-title').innerText = item['地點/名稱'];
+            
+            const fields = [
+                { label: '日期', val: item['日期'], icon: '📅' },
+                { label: '分類', val: item['分類'], icon: '🏷️' },
+                { label: '人員', val: item['人員'], icon: '👥' },
+                { label: '距離', val: item['距離'], icon: '📏' },
+                { label: '天數', val: item['天數'], icon: '⏱️' },
+                { label: '備註', val: item['備註'], icon: '📝' }
+            ];
+
+            let html = `<div class="grid grid-cols-1 gap-4">`;
+            fields.forEach(f => {
+                if(f.val) {
+                    html += `
+                        <div class="flex items-start">
+                            <span class="text-xl mr-3">${f.icon}</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">${f.label}</div>
+                                <div class="text-slate-700">${f.val}</div>
+                            </div>
+                        </div>`;
+                }
+            });
+
+            if (item['GPX']) {
+                html += `
+                    <div class="mt-6 pt-6 border-t">
+                        <a href="${item['GPX']}" target="_blank" class="block w-full text-center bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                            下載 / 查看 GPX 軌跡
+                        </a>
+                    </div>`;
+            }
+            html += `</div>`;
+
+            document.getElementById('modal-body').innerHTML = html;
+            modal.classList.add('modal-active');
+        }
+
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('modal-active');
+        }
+    </script>
+</body>
+</html>
