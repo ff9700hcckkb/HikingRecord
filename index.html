@@ -224,7 +224,7 @@
                 b.innerText = c; b.onclick = (e) => updateCat(c, e.target); cc.appendChild(b);
             });
         }
-       function showDetail(row) {
+      function showDetail(row) {
             const modal = document.getElementById('detail-modal');
             document.getElementById('modal-title').innerText = row[getIdx("路線")] || "行程詳情";
             
@@ -243,32 +243,32 @@
                 const val = row[getIdx(f.k)];
                 if(val && f.k !== '路線') {
                     if(f.k === 'GPX' && val.toString().includes('http')) {
-                        html += `<div class="pt-4"><a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-4 rounded-2xl text-base shadow-lg">查看 GPX 軌跡檔案</a></div>`;
+                        // GPX 按鈕樣式
+                        html += `<div class="pt-4"><a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-4 rounded-2xl text-base shadow-lg hover:bg-emerald-500 transition">查看 GPX 軌跡檔案</a></div>`;
                     } else if(f.k === '分類') {
-                        // --- 在詳情頁解析多重標籤 ---
+                        // 解析多重標籤並設定顏色
                         const cats = val.toString().split(/[,，\s]+/).filter(c => c);
                         const tagHtml = cats.map(cat => {
-    let colorClass = "border-slate-600 text-slate-400 bg-slate-400/5"; // 預設灰色
-    
-    if(cat.includes("小百岳")) colorClass = "border-emerald-500 text-emerald-500 bg-emerald-500/10";
-    if(cat.includes("百岳")) colorClass = "border-purple-500 text-purple-500 bg-purple-500/10";
-    if(cat.includes("健行")) colorClass = "border-sky-500 text-sky-500 bg-sky-500/10";
-    
-    // --- 新增中級山與縱走 ---
-    if(cat.includes("中級山")) colorClass = "border-lime-500 text-lime-500 bg-lime-500/10";
-    if(cat.includes("縱走")) colorClass = "border-orange-500 text-orange-500 bg-orange-500/10";
-    
-    // --- 特殊 ---
-    if(cat.includes("特殊")) colorClass = "border-rose-500 text-rose-500 bg-rose-500/10";
-    
-    return `<span class="px-2 py-0.5 border ${colorClass} text-xs rounded font-bold mr-1.5 mb-1.5 inline-block">${cat}</span>`;
-}).join('');
+                            let colorClass = "border-slate-600 text-slate-400 bg-slate-400/5"; 
+                            if(cat.includes("小百岳")) colorClass = "border-emerald-500 text-emerald-500 bg-emerald-500/10";
+                            if(cat.includes("百岳")) colorClass = "border-purple-500 text-purple-500 bg-purple-500/10";
+                            if(cat.includes("健行")) colorClass = "border-sky-500 text-sky-500 bg-sky-500/10";
+                            if(cat.includes("中級山")) colorClass = "border-lime-500 text-lime-500 bg-lime-500/10";
+                            if(cat.includes("縱走")) colorClass = "border-orange-500 text-orange-500 bg-orange-500/10";
+                            if(cat.includes("特殊")) colorClass = "border-rose-500 text-rose-500 bg-rose-500/10";
+                            
+                            return `<span class="px-2 py-0.5 border ${colorClass} text-[11px] rounded font-bold mr-1.5 inline-block whitespace-nowrap">${cat}</span>`;
+                        }).join('');
                         
-                        html += `<div class="flex flex-col border-b border-slate-700/50 pb-3">
-                                    <span class="text-slate-500 font-bold text-sm uppercase tracking-wide mb-2">${f.l}</span>
-                                    <div class="flex flex-wrap">${tagHtml}</div>
+                        // 平行對齊結構 (flex-row)
+                        html += `<div class="flex items-center border-b border-slate-700/50 pb-3">
+                                    <span class="w-20 text-slate-500 shrink-0 font-bold text-sm uppercase tracking-wide">${f.l}</span>
+                                    <div class="flex flex-wrap items-center ml-2">
+                                        ${tagHtml}
+                                    </div>
                                  </div>`;
                     } else {
+                        // 一般欄位平行對齊
                         html += `<div class="flex border-b border-slate-700/50 pb-3">
                                     <span class="w-20 text-slate-500 shrink-0 font-bold text-sm uppercase tracking-wide">${f.l}</span>
                                     <span class="text-slate-300 ml-2 leading-relaxed text-base">${val}</span>
