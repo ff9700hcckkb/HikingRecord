@@ -15,7 +15,6 @@
         .filter-content { transition: all 0.3s ease-in-out; max-height: 0; overflow: hidden; opacity: 0; }
         .filter-content.open { max-height: 800px; opacity: 1; margin-top: 1rem; }
         #back-to-top { position: fixed; bottom: 2rem; right: 1.5rem; display: none; z-index: 40; }
-        /* 隱藏搜尋框預設的清除按鈕以統一風格 */
         input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
     </style>
 </head>
@@ -101,16 +100,19 @@
                 if (results.data.length === 0) return;
                 results.data[0].forEach((col, i) => { if (col) colMap[col.trim()] = i; });
 
-                const dateIdx = getIdx("日期"), catIdx = getIdx("分類"), routeIdx = getIdx("路線");
+                const dateIdx = getIdx("日期"), catIdx = getIdx("分類"), routeIdx = getIdx("路線"), distIdx = getIdx("距離");
 
                 allProcessedData = results.data.slice(1).map(row => {
                     let d = row[dateIdx] ? row[dateIdx].toString().trim().replace(/\./g, '/') : "";
+                    // 檢查是否為未來行程 (距離欄位寫 "未確定")
+                    const isFuture = row[distIdx] && row[distIdx].toString().includes("未確定");
+                    
                     return {
                         year: d.substring(0, 4),
                         mmdd: d.includes('/') ? d.substring(d.indexOf('/') + 1) : d,
                         category: row[catIdx] ? row[catIdx].trim() : "未分類",
                         name: row[routeIdx] || "未命名行程",
-                        // 建立搜尋專用的全文字串，包含整列資料內容
+                        isFuture: isFuture,
                         searchString: row.join('|').toLowerCase(),
                         raw: row
                     };
@@ -121,86 +123,6 @@
                 updateTotalCount(allProcessedData.length);
             }
         });
-
-        function handleSearch() {
-            const input = document.getElementById('keyword-search');
-            const clearBtn = document.getElementById('clear-search');
-            searchKeyword = input.value.toLowerCase().trim();
-            
-            clearBtn.classList.toggle('hidden', searchKeyword === '');
-            applyFilters();
-        }
-
-        function clearSearch() {
-            const input = document.getElementById('keyword-search');
-            input.value = '';
-            handleSearch();
-        }
-
-        function applyFilters() {
-            let filtered = allProcessedData;
-            
-            // 1. 年份篩選
-            if (currentYear !== '全部') filtered = filtered.filter(d => d.year === currentYear);
-            // 2. 分類篩選
-            if (currentCat !== '全部') filtered = filtered.filter(d => d.category === currentCat);
-            // 3. 關鍵字搜尋
-            if (searchKeyword !== '') {
-                filtered = filtered.filter(d => d.searchString.includes(searchKeyword));
-            }
-
-            renderData(filtered);
-            updateTotalCount(filtered.length);
-        }
-
-        function updateTotalCount(count) {
-            document.getElementById('total-count').innerText = `找到 ${count} 筆記錄`;
-        }
-
-        function toggleFilter() {
-            const panel = document.getElementById('filter-panel');
-            const chevron = document.getElementById('chevron');
-            panel.classList.toggle('open');
-            chevron.style.transform = panel.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
-        }
-
-        function updateYear(y, el) {
-            currentYear = y;
-            document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            updateHint();
-            applyFilters();
-        }
-
-        function updateCat(c, el) {
-            currentCat = c;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            updateHint();
-            applyFilters();
-        }
-
-        function updateHint() {
-            document.getElementById('active-filter-hint').innerText = `${currentYear} / ${currentCat}`;
-        }
-
-        const getIdx = (k) => colMap[k] !== undefined ? colMap[k] : colMap[Object.keys(colMap).find(x => x.includes(k))];
-
-        function initFilterButtons() {
-            const years = [...new Set(allProcessedData.map(d => d.year))].sort((a, b) => b - a);
-            const cats = [...new Set(allProcessedData.map(d => d.category))];
-            const yc = document.getElementById('year-filter'), cc = document.getElementById('cat-filter');
-            years.forEach(y => {
-                const b = document.createElement('button');
-                b.className = 'year-btn px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all';
-                b.innerText = y; b.onclick = (e) => updateYear(y, e.target); yc.appendChild(b);
-            });
-            cats.forEach(c => {
-                const b = document.createElement('button');
-                b.className = 'filter-btn px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all';
-                b.innerText = c; b.onclick = (e) => updateCat(c, e.target); cc.appendChild(b);
-            });
-        }
 
         function renderData(data) {
             const container = document.getElementById('record-container');
@@ -226,7 +148,9 @@
                         ${grouped[year].map(item => `
                             <div class="flex items-center group cursor-pointer hover:bg-slate-800/30 p-3 rounded-xl transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
                                 <span class="text-emerald-500 font-mono font-bold w-24 shrink-0 text-xs">${item.mmdd}</span>
-                                <span class="text-slate-200 text-sm font-medium group-hover:text-white truncate">${item.name}</span>
+                                <span class="text-sm font-medium truncate" style="color: ${item.isFuture ? '#FFAF60' : '#e2e8f0'};">
+                                    ${item.name} ${item.isFuture ? '<span class="text-[10px] opacity-70 ml-1">(規劃中)</span>' : ''}
+                                </span>
                             </div>
                         `).join('')}
                     </div>
@@ -235,6 +159,57 @@
             });
         }
 
+        // --- 以下函式維持不變 ---
+        function handleSearch() {
+            const input = document.getElementById('keyword-search');
+            const clearBtn = document.getElementById('clear-search');
+            searchKeyword = input.value.toLowerCase().trim();
+            clearBtn.classList.toggle('hidden', searchKeyword === '');
+            applyFilters();
+        }
+        function clearSearch() { document.getElementById('keyword-search').value = ''; handleSearch(); }
+        function applyFilters() {
+            let filtered = allProcessedData;
+            if (currentYear !== '全部') filtered = filtered.filter(d => d.year === currentYear);
+            if (currentCat !== '全部') filtered = filtered.filter(d => d.category === currentCat);
+            if (searchKeyword !== '') filtered = filtered.filter(d => d.searchString.includes(searchKeyword));
+            renderData(filtered);
+            updateTotalCount(filtered.length);
+        }
+        function updateTotalCount(count) { document.getElementById('total-count').innerText = `找到 ${count} 筆記錄`; }
+        function toggleFilter() {
+            const panel = document.getElementById('filter-panel');
+            const chevron = document.getElementById('chevron');
+            panel.classList.toggle('open');
+            chevron.style.transform = panel.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+        function updateYear(y, el) {
+            currentYear = y;
+            document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active'); updateHint(); applyFilters();
+        }
+        function updateCat(c, el) {
+            currentCat = c;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active'); updateHint(); applyFilters();
+        }
+        function updateHint() { document.getElementById('active-filter-hint').innerText = `${currentYear} / ${currentCat}`; }
+        const getIdx = (k) => colMap[k] !== undefined ? colMap[k] : colMap[Object.keys(colMap).find(x => x.includes(k))];
+        function initFilterButtons() {
+            const years = [...new Set(allProcessedData.map(d => d.year))].sort((a, b) => b - a);
+            const cats = [...new Set(allProcessedData.map(d => d.category))];
+            const yc = document.getElementById('year-filter'), cc = document.getElementById('cat-filter');
+            years.forEach(y => {
+                const b = document.createElement('button');
+                b.className = 'year-btn px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all';
+                b.innerText = y; b.onclick = (e) => updateYear(y, e.target); yc.appendChild(b);
+            });
+            cats.forEach(c => {
+                const b = document.createElement('button');
+                b.className = 'filter-btn px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all';
+                b.innerText = c; b.onclick = (e) => updateCat(c, e.target); cc.appendChild(b);
+            });
+        }
         function showDetail(row) {
             const modal = document.getElementById('detail-modal');
             document.getElementById('modal-title').innerText = row[getIdx("路線")] || "行程詳情";
@@ -254,11 +229,7 @@
             document.getElementById('modal-body').innerHTML = html;
             modal.classList.add('modal-active');
         }
-
-        window.onscroll = () => {
-            const btn = document.getElementById("back-to-top");
-            btn.style.display = (window.scrollY > 300) ? "block" : "none";
-        };
+        window.onscroll = () => { document.getElementById("back-to-top").style.display = (window.scrollY > 300) ? "block" : "none"; };
         const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
         function closeModal() { document.getElementById('detail-modal').classList.remove('modal-active'); }
     </script>
