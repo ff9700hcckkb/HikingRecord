@@ -161,11 +161,20 @@
             applyFilters();
         }
         function clearSearch() { document.getElementById('keyword-search').value = ''; handleSearch(); }
-        function applyFilters() {
+    function applyFilters() {
             let filtered = allProcessedData;
+            
+            // 1. 年份篩選
             if (currentYear !== '全部') filtered = filtered.filter(d => d.year === currentYear);
-            if (currentCat !== '全部') filtered = filtered.filter(d => d.category === currentCat);
+            
+            // 2. 分類篩選：調整為「包含」邏輯
+            if (currentCat !== '全部') {
+                filtered = filtered.filter(d => d.category.includes(currentCat));
+            }
+            
+            // 3. 關鍵字搜尋
             if (searchKeyword !== '') filtered = filtered.filter(d => d.searchString.includes(searchKeyword));
+
             renderData(filtered);
             updateTotalCount(filtered.length);
         }
@@ -188,15 +197,26 @@
         }
         function updateHint() { document.getElementById('active-filter-hint').innerText = `${currentYear} / ${currentCat}`; }
         const getIdx = (k) => colMap[k] !== undefined ? colMap[k] : colMap[Object.keys(colMap).find(x => x.includes(k))];
-        function initFilterButtons() {
+     function initFilterButtons() {
             const years = [...new Set(allProcessedData.map(d => d.year))].sort((a, b) => b - a);
-            const cats = [...new Set(allProcessedData.map(d => d.category))];
+            
+            // --- 優化點：拆分多選分類，提取單一標籤 ---
+            let allCats = [];
+            allProcessedData.forEach(d => {
+                const splitCats = d.category.split(/[,，\s]+/).filter(c => c);
+                allCats = allCats.concat(splitCats);
+            });
+            const cats = [...new Set(allCats)]; // 取得不重複的單一標籤清單
+            // ---------------------------------------
+
             const yc = document.getElementById('year-filter'), cc = document.getElementById('cat-filter');
+            
             years.forEach(y => {
                 const b = document.createElement('button');
                 b.className = 'year-btn px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
                 b.innerText = y; b.onclick = (e) => updateYear(y, e.target); yc.appendChild(b);
             });
+
             cats.forEach(c => {
                 const b = document.createElement('button');
                 b.className = 'filter-btn px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
