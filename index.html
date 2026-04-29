@@ -3,28 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hiking Logs - Dark Mode</title>
+    <title>Hiking Logs - Filterable</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f1f5f9; }
-        .accordion-content { transition: max-height 0.3s ease-out; overflow: hidden; max-height: 0; }
-        .accordion-open .accordion-content { max-height: 5000px; }
         .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
         .modal-active { display: flex; align-items: center; justify-content: center; }
-        /* 滾動條美化 */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .filter-btn.active { background-color: #10b981; color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        /* 隱藏過濾後不符的年份 */
+        .year-section.hidden-section { display: none; }
     </style>
 </head>
 <body class="font-sans antialiased">
 
     <div class="max-w-2xl mx-auto py-12 px-6">
-        <header class="mb-12 border-l-4 border-emerald-500 pl-6">
+        <header class="mb-8 border-l-4 border-emerald-500 pl-6">
             <h1 class="text-4xl font-black tracking-tight text-white">山系記錄</h1>
             <p class="text-slate-400 mt-2 font-medium">個人登山軌跡與日誌資料庫</p>
         </header>
+
+        <div id="filter-container" class="flex flex-wrap gap-2 mb-10">
+            <button onclick="filterRecords('全部')" class="filter-btn active px-4 py-2 rounded-full bg-slate-800 text-slate-300 text-sm font-bold border border-slate-700 transition all hover:border-emerald-500">全部</button>
+            </div>
         
         <div id="loading" class="text-center py-20 text-slate-500 animate-pulse">連線至 Google Sheets...</div>
         <div id="record-container" class="space-y-10"></div>
@@ -40,51 +41,87 @@
 
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRssVI_ETyZAWp_ZzR6NSQr49bPhLajgVl83G1PWP2Ytb7axuYZQEtNf9NgpfJijFRQfdauQnulc0fS/pub?output=csv';
+        let allData = []; // 儲存原始資料
 
         Papa.parse(csvUrl, {
             download: true,
             header: false,
             skipEmptyLines: true,
             complete: function(results) {
-                const rawData = results.data.slice(1);
-                renderData(rawData);
+                allData = results.data.slice(1);
+                initFilters(allData);
+                renderData(allData);
                 document.getElementById('loading').remove();
             }
         });
 
+        // 1. 初始化按鈕：自動抓取 CSV 裡的所有分類
+        function initFilters(data) {
+            const categories = new Set();
+            data.forEach(row => { if(row[2]) categories.add(row[2]); }); // C欄是分類
+            
+            const filterContainer = document.getElementById('filter-container');
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn px-4 py-2 rounded-full bg-slate-800 text-slate-300 text-sm font-bold border border-slate-700 transition all hover:border-emerald-500';
+                btn.innerText = cat;
+                btn.onclick = () => filterRecords(cat);
+                filterContainer.appendChild(btn);
+            });
+        }
+
+        // 2. 篩選功能
+        function filterRecords(category) {
+            // 切換按鈕樣式
+            const btns = document.querySelectorAll('.filter-btn');
+            btns.forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.innerText === category) btn.classList.add('active');
+            });
+
+            // 重新渲染資料
+            if (category === '全部') {
+                renderData(allData);
+            } else {
+                const filtered = allData.filter(row => row[2] === category);
+                renderData(filtered);
+            }
+        }
+
         function renderData(data) {
             const container = document.getElementById('record-container');
+            container.innerHTML = ''; // 清空舊資料
+            
             const grouped = {};
-
             data.forEach(row => {
                 let dateStr = row[0] || ""; 
-                const name = row[1] || "未命名行程";
                 if(!dateStr) return;
 
-                // 統一將點號替換為斜線
                 dateStr = dateStr.replace(/\./g, '/');
                 const year = dateStr.substring(0, 4);
-                
-                // 處理月日顯示邏輯 (抓取年份後的第一個斜線之後的所有文字)
-                let mmdd = "";
-                const firstSlashIndex = dateStr.indexOf('/');
-                if (firstSlashIndex !== -1) {
-                    mmdd = dateStr.substring(firstSlashIndex + 1);
-                } else {
-                    mmdd = dateStr;
-                }
+                let mmdd = dateStr.includes('/') ? dateStr.substring(dateStr.indexOf('/') + 1) : dateStr;
 
                 if (!grouped[year]) grouped[year] = [];
-                grouped[year].push({ mmdd, name, raw: row });
+                grouped[year].push({ mmdd, name: row[1] || "未命名", raw: row });
             });
 
             const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
 
+            if(sortedYears.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-600 py-10 text-lg italic">此分類尚無記錄</div>';
+                return;
+            }
+
             sortedYears.forEach(year => {
+                const count = grouped[year].length;
                 const yearDiv = document.createElement('div');
+                yearDiv.className = 'year-section';
                 yearDiv.innerHTML = `
                     <div class="flex items-center mb-6">
-                        <span class="bg-emerald-600 text-white px-4 py-1 rounded-md text-lg font-bold shadow-lg shadow-emerald-900/20">${year} 年</span>
+                        <div class="flex items-baseline">
+                            <span class="bg-emerald-600 text-white px-4 py-1 rounded-md text-lg font-bold shadow-lg">${year} 年</span>
+                            <span class="ml-3 text-slate-500 text-sm font-medium">今年共 ${count} 筆記錄</span>
+                        </div>
                         <div class="flex-grow h-px bg-slate-800 ml-4"></div>
                     </div>
                     <div class="pl-2 space-y-3">
@@ -105,7 +142,7 @@
 
         function showDetail(row) {
             const modal = document.getElementById('detail-modal');
-            document.getElementById('modal-title').innerText = row[1] || '行程詳情';
+            document.getElementById('modal-title').innerText = row[1];
             
             const labels = ['日期', '地點/名稱', '分類', '人員', '距離', '天數', '備註', 'GPX'];
             let html = `<div class="grid gap-4">`;
@@ -113,24 +150,23 @@
             labels.forEach((label, index) => {
                 const val = row[index];
                 if(val && index !== 1) {
-                    if(label === 'GPX' || val.toString().startsWith('http')) {
+                    if(label === 'GPX' || (val.toString().startsWith('http'))) {
                         html += `
-                            <div class="pt-6">
-                                <a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-500 transition shadow-lg shadow-emerald-900/40">
-                                    下載 GPX 軌跡檔案
+                            <div class="pt-4">
+                                <a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-500 shadow-lg shadow-emerald-900/40 transition">
+                                    下載 / 查看 GPX
                                 </a>
                             </div>`;
                     } else {
                         html += `
                             <div class="flex border-b border-slate-700 pb-3">
-                                <span class="w-20 text-slate-500 shrink-0 font-bold uppercase tracking-tighter text-xs mt-1">${label}</span>
-                                <span class="text-slate-200 ml-2">${val}</span>
+                                <span class="w-20 text-slate-500 shrink-0 font-bold uppercase text-xs mt-1">${label}</span>
+                                <span class="text-slate-200 ml-2 leading-relaxed">${val}</span>
                             </div>`;
                     }
                 }
             });
             html += `</div>`;
-
             document.getElementById('modal-body').innerHTML = html;
             modal.classList.add('modal-active');
         }
