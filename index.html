@@ -12,12 +12,11 @@
         .modal-active { display: flex; align-items: center; justify-content: center; }
         .filter-btn.active { background-color: #10b981; color: white; border-color: #10b981; }
         .year-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
-        
-        /* 摺疊動畫 */
         .filter-content { transition: all 0.3s ease-in-out; max-height: 0; overflow: hidden; opacity: 0; }
-        .filter-content.open { max-height: 500px; opacity: 1; margin-top: 1rem; }
-
+        .filter-content.open { max-height: 800px; opacity: 1; margin-top: 1rem; }
         #back-to-top { position: fixed; bottom: 2rem; right: 1.5rem; display: none; z-index: 40; }
+        /* 隱藏搜尋框預設的清除按鈕以統一風格 */
+        input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
     </style>
 </head>
 <body class="font-sans antialiased">
@@ -25,50 +24,57 @@
     <div class="max-w-2xl mx-auto py-8 px-5">
         <header class="mb-6 flex justify-between items-end">
             <div>
-                <h1 class="text-3xl font-black text-white">登山記錄</h1>
-               <p class="text-slate-500 text-sm"></p> 
+                <h1 class="text-3xl font-black text-white leading-none">登山記錄</h1>
+                <p class="text-slate-500 text-sm mt-2"></p>
             </div>
-            <div id="total-count" class="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20"></div>
+            <div id="total-count" class="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20 uppercase">Loading...</div>
         </header>
 
-        <div class="bg-slate-800/50 border border-slate-700 rounded-2xl p-4 mb-8">
-            <button onclick="toggleFilter()" class="w-full flex justify-between items-center text-slate-300 font-bold">
-                <div class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    <span>篩選條件</span>
-                    <span id="active-filter-hint" class="text-xs font-normal text-slate-500 ml-2">全部 / 全部</span>
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-4 mb-8 shadow-xl">
+            <div class="relative mb-4">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <svg id="chevron" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
+                <input type="search" id="keyword-search" oninput="handleSearch()" 
+                    class="block w-full pl-10 pr-10 py-2.5 bg-slate-900/80 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all outline-none" 
+                    placeholder="搜尋路線、人員或關鍵字...">
+                <button id="clear-search" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-white">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+
+            <button onclick="toggleFilter()" class="w-full flex justify-between items-center text-slate-400 font-bold text-sm hover:text-slate-200 transition-colors">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                    <span>進階條件篩選</span>
+                    <span id="active-filter-hint" class="text-[10px] font-normal text-slate-600 ml-2">全部 / 全部</span>
+                </div>
+                <svg id="chevron" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </button>
 
             <div id="filter-panel" class="filter-content">
-                <div class="mb-4">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">年份</label>
-                    <div id="year-filter" class="flex flex-wrap gap-2">
-                        <button onclick="updateYear('全部', this)" class="year-btn active px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all">全部</button>
+                <div class="pt-4 space-y-4 border-t border-slate-700/50 mt-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">年份</label>
+                        <div id="year-filter" class="flex flex-wrap gap-2">
+                            <button onclick="updateYear('全部', this)" class="year-btn active px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all">全部</button>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">分類</label>
-                    <div id="cat-filter" class="flex flex-wrap gap-2">
-                        <button onclick="updateCat('全部', this)" class="filter-btn active px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all">全部</button>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">分類</label>
+                        <div id="cat-filter" class="flex flex-wrap gap-2">
+                            <button onclick="updateCat('全部', this)" class="filter-btn active px-3 py-1 rounded-lg bg-slate-900 text-slate-400 text-xs border border-slate-700 transition-all">全部</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div id="loading" class="text-center py-20 text-slate-600 animate-pulse text-sm italic">讀取中...</div>
         <div id="record-container" class="space-y-10"></div>
     </div>
 
-    <button id="back-to-top" onclick="scrollToTop()" class="bg-emerald-600 text-white p-3 rounded-full shadow-lg shadow-emerald-900/40">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" />
-        </svg>
+    <button id="back-to-top" onclick="scrollToTop()" class="bg-emerald-600 text-white p-3 rounded-full shadow-lg shadow-emerald-900/40 border border-emerald-400/20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" /></svg>
     </button>
 
     <div id="detail-modal" class="modal p-4" onclick="closeModal()">
@@ -84,6 +90,7 @@
         let allProcessedData = []; 
         let currentYear = '全部';
         let currentCat = '全部';
+        let searchKeyword = '';
         let colMap = {};
 
         Papa.parse(csvUrl, {
@@ -103,16 +110,52 @@
                         mmdd: d.includes('/') ? d.substring(d.indexOf('/') + 1) : d,
                         category: row[catIdx] ? row[catIdx].trim() : "未分類",
                         name: row[routeIdx] || "未命名行程",
+                        // 建立搜尋專用的全文字串，包含整列資料內容
+                        searchString: row.join('|').toLowerCase(),
                         raw: row
                     };
                 }).filter(item => item.year.length === 4);
 
                 initFilterButtons();
                 applyFilters();
-                document.getElementById('loading').remove();
-                document.getElementById('total-count').innerText = `總計 ${allProcessedData.length} 趟行程`;
+                updateTotalCount(allProcessedData.length);
             }
         });
+
+        function handleSearch() {
+            const input = document.getElementById('keyword-search');
+            const clearBtn = document.getElementById('clear-search');
+            searchKeyword = input.value.toLowerCase().trim();
+            
+            clearBtn.classList.toggle('hidden', searchKeyword === '');
+            applyFilters();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('keyword-search');
+            input.value = '';
+            handleSearch();
+        }
+
+        function applyFilters() {
+            let filtered = allProcessedData;
+            
+            // 1. 年份篩選
+            if (currentYear !== '全部') filtered = filtered.filter(d => d.year === currentYear);
+            // 2. 分類篩選
+            if (currentCat !== '全部') filtered = filtered.filter(d => d.category === currentCat);
+            // 3. 關鍵字搜尋
+            if (searchKeyword !== '') {
+                filtered = filtered.filter(d => d.searchString.includes(searchKeyword));
+            }
+
+            renderData(filtered);
+            updateTotalCount(filtered.length);
+        }
+
+        function updateTotalCount(count) {
+            document.getElementById('total-count').innerText = `找到 ${count} 筆記錄`;
+        }
 
         function toggleFilter() {
             const panel = document.getElementById('filter-panel');
@@ -141,19 +184,6 @@
             document.getElementById('active-filter-hint').innerText = `${currentYear} / ${currentCat}`;
         }
 
-        function applyFilters() {
-            let filtered = allProcessedData;
-            if (currentYear !== '全部') filtered = filtered.filter(d => d.year === currentYear);
-            if (currentCat !== '全部') filtered = filtered.filter(d => d.category === currentCat);
-            renderData(filtered);
-        }
-
-        // --- 以下維持原有邏輯，僅微調樣式 ---
-        window.onscroll = () => {
-            const btn = document.getElementById("back-to-top");
-            btn.style.display = (window.scrollY > 300) ? "block" : "none";
-        };
-        const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
         const getIdx = (k) => colMap[k] !== undefined ? colMap[k] : colMap[Object.keys(colMap).find(x => x.includes(k))];
 
         function initFilterButtons() {
@@ -182,21 +212,20 @@
             });
             const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
             if(sortedYears.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-600 py-10">找不到記錄</div>';
+                container.innerHTML = '<div class="text-center text-slate-600 py-10 text-sm">找不到符合條件的記錄</div>';
                 return;
             }
             sortedYears.forEach(year => {
                 const div = document.createElement('div');
                 div.innerHTML = `
                     <div class="flex items-center mb-4">
-                        <span class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-lg text-sm font-bold border border-blue-600/30">${year}</span>
-                        <div class="flex-grow h-px bg-slate-800 ml-4"></div>
-                        <span class="ml-4 text-slate-600 text-xs">${grouped[year].length} 筆</span>
+                        <span class="bg-blue-600/20 text-blue-400 px-3 py-0.5 rounded-md text-[10px] font-black border border-blue-600/30 uppercase tracking-tighter">${year}</span>
+                        <div class="flex-grow h-px bg-slate-800 ml-3"></div>
                     </div>
                     <div class="space-y-1">
                         ${grouped[year].map(item => `
                             <div class="flex items-center group cursor-pointer hover:bg-slate-800/30 p-3 rounded-xl transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
-                                <span class="text-emerald-500 font-mono font-bold w-24 shrink-0 text-sm">${item.mmdd}</span>
+                                <span class="text-emerald-500 font-mono font-bold w-24 shrink-0 text-xs">${item.mmdd}</span>
                                 <span class="text-slate-200 text-sm font-medium group-hover:text-white truncate">${item.name}</span>
                             </div>
                         `).join('')}
@@ -217,7 +246,7 @@
                     if(val.toString().includes('http')) {
                         html += `<div class="pt-2"><a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-3 rounded-xl text-sm">查看 GPX</a></div>`;
                     } else {
-                        html += `<div class="flex border-b border-slate-700/50 pb-2"><span class="w-16 text-slate-500 shrink-0 font-bold text-xs">${f.l}</span><span class="text-slate-300 ml-2 leading-relaxed">${val}</span></div>`;
+                        html += `<div class="flex border-b border-slate-700/50 pb-2"><span class="w-16 text-slate-500 shrink-0 font-bold text-xs uppercase">${f.l}</span><span class="text-slate-300 ml-2 leading-relaxed">${val}</span></div>`;
                     }
                 }
             });
@@ -225,6 +254,12 @@
             document.getElementById('modal-body').innerHTML = html;
             modal.classList.add('modal-active');
         }
+
+        window.onscroll = () => {
+            const btn = document.getElementById("back-to-top");
+            btn.style.display = (window.scrollY > 300) ? "block" : "none";
+        };
+        const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
         function closeModal() { document.getElementById('detail-modal').classList.remove('modal-active'); }
     </script>
 </body>
