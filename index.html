@@ -3,33 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登山記錄展示</title>
+    <title>Hiking Logs - Dark Mode</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body { background-color: #0f172a; color: #f1f5f9; }
         .accordion-content { transition: max-height 0.3s ease-out; overflow: hidden; max-height: 0; }
         .accordion-open .accordion-content { max-height: 5000px; }
-        .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+        .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
         .modal-active { display: flex; align-items: center; justify-content: center; }
+        /* 滾動條美化 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="font-sans antialiased">
 
     <div class="max-w-2xl mx-auto py-12 px-6">
-        <header class="mb-10 border-l-4 border-emerald-600 pl-4">
-            <h1 class="text-3xl font-bold text-slate-800">登山行程記錄</h1>
-            <p class="text-slate-500 mt-1">依年份與日期排列</p>
+        <header class="mb-12 border-l-4 border-emerald-500 pl-6">
+            <h1 class="text-4xl font-black tracking-tight text-white">山系記錄</h1>
+            <p class="text-slate-400 mt-2 font-medium">個人登山軌跡與日誌資料庫</p>
         </header>
         
-        <div id="loading" class="text-center py-20 text-slate-400 text-lg">讀取雲端資料中...</div>
-        <div id="record-container" class="space-y-4"></div>
+        <div id="loading" class="text-center py-20 text-slate-500 animate-pulse">連線至 Google Sheets...</div>
+        <div id="record-container" class="space-y-10"></div>
     </div>
 
     <div id="detail-modal" class="modal p-4" onclick="closeModal()">
-        <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl relative" onclick="event.stopPropagation()">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-3xl">&times;</button>
-            <h2 id="modal-title" class="text-xl font-bold text-emerald-800 border-b pb-4 mb-6"></h2>
-            <div id="modal-body" class="space-y-4 text-sm"></div>
+        <div class="bg-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative border border-slate-700" onclick="event.stopPropagation()">
+            <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-500 hover:text-white text-3xl transition">&times;</button>
+            <h2 id="modal-title" class="text-2xl font-bold text-emerald-400 border-b border-slate-700 pb-5 mb-6"></h2>
+            <div id="modal-body" class="space-y-5 text-sm"></div>
         </div>
     </div>
 
@@ -38,69 +43,57 @@
 
         Papa.parse(csvUrl, {
             download: true,
-            header: false, // 改用陣列索引存取，避免標題名稱錯誤
+            header: false,
             skipEmptyLines: true,
             complete: function(results) {
-                // 移除標題列
                 const rawData = results.data.slice(1);
                 renderData(rawData);
                 document.getElementById('loading').remove();
             }
         });
 
-    function renderData(data) {
+        function renderData(data) {
             const container = document.getElementById('record-container');
             const grouped = {};
 
             data.forEach(row => {
-                let dateStr = row[0] || ""; // A欄：日期
-                const name = row[1] || "未命名行程"; 
-                
+                let dateStr = row[0] || ""; 
+                const name = row[1] || "未命名行程";
                 if(!dateStr) return;
 
-                // 1. 統一將點號替換成斜線，方便後續處理
+                // 統一將點號替換為斜線
                 dateStr = dateStr.replace(/\./g, '/');
-
-                // 2. 提取前四位數字作為年份
                 const year = dateStr.substring(0, 4);
                 
-                // 3. 提取年份之後的內容作為顯示日期 (例如 04/23-25)
-                // 邏輯：找到第一個斜線的位置，取其後面的所有字元
+                // 處理月日顯示邏輯 (抓取年份後的第一個斜線之後的所有文字)
                 let mmdd = "";
                 const firstSlashIndex = dateStr.indexOf('/');
                 if (firstSlashIndex !== -1) {
                     mmdd = dateStr.substring(firstSlashIndex + 1);
                 } else {
-                    mmdd = dateStr; // 如果沒斜線就顯示原始文字
+                    mmdd = dateStr;
                 }
 
                 if (!grouped[year]) grouped[year] = [];
-                grouped[year].push({
-                    fullDate: dateStr,
-                    mmdd: mmdd,
-                    name: name,
-                    raw: row 
-                });
+                grouped[year].push({ mmdd, name, raw: row });
             });
 
             const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
 
             sortedYears.forEach(year => {
                 const yearDiv = document.createElement('div');
-                yearDiv.className = 'mb-8';
-                
                 yearDiv.innerHTML = `
-                    <div class="flex items-center mb-4">
-                        <span class="bg-emerald-700 text-white px-4 py-1 rounded-full text-lg font-bold shadow-sm">${year} 年</span>
-                        <div class="flex-grow h-px bg-slate-200 ml-4"></div>
+                    <div class="flex items-center mb-6">
+                        <span class="bg-emerald-600 text-white px-4 py-1 rounded-md text-lg font-bold shadow-lg shadow-emerald-900/20">${year} 年</span>
+                        <div class="flex-grow h-px bg-slate-800 ml-4"></div>
                     </div>
-                    <div class="pl-2 space-y-1">
+                    <div class="pl-2 space-y-3">
                         ${grouped[year].map(item => `
-                            <div class="flex items-start group cursor-pointer hover:bg-emerald-50 p-2 rounded-lg transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
-                                <span class="text-slate-300 font-mono mt-1 w-6 shrink-0">└</span>
-                                <div class="flex flex-col md:flex-row md:items-center">
-                                    <span class="text-emerald-600 font-mono font-bold w-28 shrink-0">${item.mmdd}</span>
-                                    <span class="text-slate-700 font-bold group-hover:text-emerald-800 transition">${item.name}</span>
+                            <div class="flex items-start group cursor-pointer hover:bg-slate-800/50 p-3 rounded-xl transition duration-200" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
+                                <span class="text-slate-700 font-mono mt-1 w-6 shrink-0 group-hover:text-emerald-500 transition">└</span>
+                                <div class="flex flex-col sm:flex-row sm:items-center">
+                                    <span class="text-emerald-500 font-mono font-bold w-32 shrink-0 tracking-tight">${item.mmdd}</span>
+                                    <span class="text-slate-200 font-semibold group-hover:text-white transition">${item.name}</span>
                                 </div>
                             </div>
                         `).join('')}
@@ -114,25 +107,24 @@
             const modal = document.getElementById('detail-modal');
             document.getElementById('modal-title').innerText = row[1] || '行程詳情';
             
-            // 定義顯示欄位 (根據 Google Sheets 欄位順序)
             const labels = ['日期', '地點/名稱', '分類', '人員', '距離', '天數', '備註', 'GPX'];
-            let html = `<div class="grid gap-3">`;
+            let html = `<div class="grid gap-4">`;
             
             labels.forEach((label, index) => {
                 const val = row[index];
-                if(val && index !== 1) { // 標題已顯示在上方，這裡跳過名稱
-                    if(label === 'GPX' || val.startsWith('http')) {
+                if(val && index !== 1) {
+                    if(label === 'GPX' || val.toString().startsWith('http')) {
                         html += `
-                            <div class="pt-4 border-t mt-2">
-                                <a href="${val}" target="_blank" class="block text-center bg-emerald-600 text-white font-bold py-2 rounded-lg hover:bg-emerald-700 transition shadow-md">
-                                    查看 GPX 軌跡
+                            <div class="pt-6">
+                                <a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-500 transition shadow-lg shadow-emerald-900/40">
+                                    下載 GPX 軌跡檔案
                                 </a>
                             </div>`;
                     } else {
                         html += `
-                            <div class="flex border-b border-slate-50 pb-2">
-                                <span class="w-16 text-slate-400 shrink-0 font-bold">${label}</span>
-                                <span class="text-slate-700">${val}</span>
+                            <div class="flex border-b border-slate-700 pb-3">
+                                <span class="w-20 text-slate-500 shrink-0 font-bold uppercase tracking-tighter text-xs mt-1">${label}</span>
+                                <span class="text-slate-200 ml-2">${val}</span>
                             </div>`;
                     }
                 }
