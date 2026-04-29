@@ -116,7 +116,7 @@
             }
         });
 
-        function renderData(data) {
+      function renderData(data) {
             const container = document.getElementById('record-container');
             container.innerHTML = '';
             const grouped = {};
@@ -136,16 +136,36 @@
                         <span class="bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-black uppercase tracking-widest shadow-md">${year}</span>
                         <div class="flex-grow h-px bg-slate-800 ml-4"></div>
                     </div>
-                    <div class="space-y-2">
-                        ${grouped[year].map(item => `
-                            <div class="flex items-center group cursor-pointer hover:bg-slate-800/40 p-4 rounded-2xl transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
-                                <span class="text-emerald-500 font-mono font-bold w-24 shrink-0 text-sm tracking-tight">${item.mmdd}</span>
-                                <span class="text-base font-bold truncate flex-grow" style="color: ${item.isFuture ? '#FFAF60' : '#f8fafc'};">
-                                    ${item.name} ${item.isFuture ? '<span class="text-xs font-normal opacity-60 ml-2">(規劃中)</span>' : ''}
-                                </span>
-                                <svg class="h-4 w-4 text-slate-700 group-hover:text-emerald-500 transition ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                            </div>
-                        `).join('')}
+                    <div class="space-y-4"> ${grouped[year].map(item => {
+                            // --- 這裡就是您提到的解析分類字串邏輯 ---
+                            const cats = item.category.split(/[,，\s]+/).filter(c => c);
+                            const tagHtml = cats.map(cat => {
+                                // 根據關鍵字定義顏色
+                                let colorClass = "border-slate-600 text-slate-400 bg-slate-400/5"; 
+                                if(cat.includes("小百岳")) colorClass = "border-emerald-500 text-emerald-500 bg-emerald-500/5";
+                                if(cat.includes("縱走")) colorClass = "border-amber-500 text-amber-500 bg-amber-500/5";
+                                if(cat.includes("健行")) colorClass = "border-sky-500 text-sky-500 bg-sky-500/5";
+                                if(cat.includes("百岳")) colorClass = "border-purple-500 text-purple-500 bg-purple-500/5";
+                                
+                                return `<span class="px-1.5 py-0.5 border ${colorClass} text-[10px] rounded font-bold mr-1.5 mt-1 inline-block">${cat}</span>`;
+                            }).join('');
+
+                            return `
+                                <div class="flex flex-col group cursor-pointer hover:bg-slate-800/40 p-4 rounded-2xl transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
+                                    <div class="flex items-center">
+                                        <span class="text-emerald-500 font-mono font-bold w-20 shrink-0 text-sm tracking-tight">${item.mmdd}</span>
+                                        <span class="text-base font-bold truncate flex-grow" style="color: ${item.isFuture ? '#FFAF60' : '#f8fafc'};">
+                                            ${item.name} 
+                                            ${item.isFuture ? '<span class="text-xs font-normal opacity-60 ml-1">(規劃中)</span>' : ''}
+                                        </span>
+                                        <svg class="h-4 w-4 text-slate-700 group-hover:text-emerald-500 transition ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                    </div>
+                                    <div class="flex flex-wrap items-center mt-1.5 pl-20">
+                                        ${tagHtml}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 `;
                 container.appendChild(div);
