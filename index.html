@@ -553,18 +553,20 @@ let searchKeyword = '';
 let colMap = {};
 
 const CAT_COLOR = {
-    '百岳':   '#a78bfa',
     '小百岳': '#4ade80',
+    '百岳':   '#a78bfa',
     '健行':   '#38bdf8',
     '中級山': '#a3e635',
     '縱走':   '#facc15',
     '特殊':   '#f87171',
 };
 
+// Split category string into individual tags first, then match each tag exactly
 function getCatColors(categoryStr) {
+    const tags = categoryStr.split(/[,，\s]+/).filter(Boolean);
     const matched = [];
-    for (const [key, val] of Object.entries(CAT_COLOR)) {
-        if (categoryStr.includes(key)) matched.push(val);
+    for (const tag of tags) {
+        if (CAT_COLOR[tag]) matched.push(CAT_COLOR[tag]);
     }
     if (!matched.length) return ['#3a3f4e'];
     return matched;
@@ -772,8 +774,8 @@ function showDetail(row) {
         }
 
         const TAG_STYLES = {
-            '百岳':   'background:#1e1a2e;color:#a78bfa',
             '小百岳': 'background:#132318;color:#4ade80',
+            '百岳':   'background:#1e1a2e;color:#a78bfa',
             '健行':   'background:#0f1e2a;color:#38bdf8',
             '中級山': 'background:#1a2310;color:#a3e635',
             '縱走':   'background:#1e1a06;color:#facc15',
@@ -783,10 +785,8 @@ function showDetail(row) {
         if (f.k === '分類') {
             const cats = val.toString().split(/[,，\s]+/).filter(Boolean);
             const tagsHtml = cats.map(cat => {
-                let style = 'background:#1c1f27;color:#8a90a0';
-                for (const [key, s] of Object.entries(TAG_STYLES)) {
-                    if (cat.includes(key)) { style = s; break; }
-                }
+                // Use exact match to avoid '小百岳' being caught by '百岳'
+                const style = TAG_STYLES[cat] || 'background:#1c1f27;color:#8a90a0';
                 return `<span class="tag" style="${style}">${cat}</span>`;
             }).join('');
             html += `<div class="modal-field">
