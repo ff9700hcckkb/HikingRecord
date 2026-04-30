@@ -27,17 +27,33 @@
             -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動更順暢 */
         }
         
-        /* 隱藏捲軸條 (讓介面更乾淨) */
-        #year-filter::-webkit-scrollbar, 
-        #cat-filter::-webkit-scrollbar {
-            display: none;
-        }
+/* --- 滾動條優化 --- */
+
+/* 隱藏捲軸：適用於 Chrome, Safari, Edge */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* 隱藏捲軸：適用於 Firefox, IE, 舊版 Edge */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+}
+
+/* 確保按鈕在橫向滑動時不會變形或斷行 */
+.year-btn, .filter-btn {
+    flex: 0 0 auto; 
+    white-space: nowrap;
+}
+
+/* 如果你的容器需要滑動，確保它有這些屬性 */
+#year-filter, #cat-filter {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* 手機滑動流暢感 */
+}
+
         
-        /* 確保按鈕文字不會斷行 */
-        .year-btn, .filter-btn {
-            flex: 0 0 auto; /* 防止按鈕被擠壓變形 */
-            white-space: nowrap;
-        }
         
     </style>
 </head>
