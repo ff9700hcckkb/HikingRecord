@@ -13,31 +13,31 @@
         }
 
         :root {
-            --bg: #f5f2ec;
-            --surface: #ffffff;
-            --border: #e0dbd0;
-            --text-primary: #1a1a1a;
-            --text-secondary: #6b6355;
-            --text-muted: #a89f91;
-            --accent: #2d6a4f;
-            --accent-light: #e8f4ef;
-            --accent-hover: #1e4d38;
+            --bg: #111318;
+            --surface: #1c1f27;
+            --border: #2a2e3a;
+            --text-primary: #e8eaf0;
+            --text-secondary: #8a90a0;
+            --text-muted: #555c6e;
+            --accent: #4ade80;
+            --accent-dim: #1a3327;
+            --accent-hover: #22c55e;
             --year-badge: #2d6a4f;
-            --future: #b5652e;
-            --tag-百岳: #5b3fa0;
-            --tag-百岳-bg: #f0ecfa;
-            --tag-小百岳: #2d6a4f;
-            --tag-小百岳-bg: #e8f4ef;
-            --tag-健行: #1e6a8a;
-            --tag-健行-bg: #e6f3f8;
-            --tag-中級山: #5a7a1e;
-            --tag-中級山-bg: #eff5e6;
-            --tag-縱走: #b5652e;
-            --tag-縱走-bg: #faf0e6;
-            --tag-特殊: #a02d2d;
-            --tag-特殊-bg: #faeaea;
-            --tag-default: #6b6355;
-            --tag-default-bg: #f0ede8;
+            --future: #fb923c;
+            --tag-百岳: #a78bfa;
+            --tag-百岳-bg: #1e1a2e;
+            --tag-小百岳: #4ade80;
+            --tag-小百岳-bg: #132318;
+            --tag-健行: #38bdf8;
+            --tag-健行-bg: #0f1e2a;
+            --tag-中級山: #a3e635;
+            --tag-中級山-bg: #1a2310;
+            --tag-縱走: #fb923c;
+            --tag-縱走-bg: #271a0e;
+            --tag-特殊: #f87171;
+            --tag-特殊-bg: #271010;
+            --tag-default: #8a90a0;
+            --tag-default-bg: #1c1f27;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -136,8 +136,8 @@
             font-size: 0.78rem;
             font-weight: 600;
             color: var(--accent);
-            background: var(--accent-light);
-            border: 1px solid #b7d9c9;
+            background: var(--accent-dim);
+            border: 1px solid #1e4d35;
             padding: 4px 10px;
             border-radius: 20px;
             white-space: nowrap;
@@ -226,7 +226,7 @@
             white-space: nowrap;
         }
         .chip:hover { border-color: var(--accent); color: var(--accent); }
-        .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .chip.active { background: var(--accent); border-color: var(--accent); color: #0a0e0a; font-weight: 700; }
 
         /* ── Record list ── */
         .year-section { margin-bottom: 28px; }
@@ -272,10 +272,9 @@
             position: relative;
         }
         .record-item:last-child { border-bottom: none; }
-        .record-item:hover { background: #f9f7f3; }
-        .record-item:active { background: var(--accent-light); }
+        .record-item:hover { background: #22262f; }
+        .record-item:active { background: var(--accent-dim); }
 
-        /* Left colour strip by category */
         .record-item::before {
             content: '';
             position: absolute;
@@ -429,7 +428,7 @@
             padding: 13px;
             text-align: center;
             background: var(--accent);
-            color: #fff;
+            color: #0a0e0a;
             text-decoration: none;
             border-radius: 10px;
             font-size: 0.95rem;
@@ -446,13 +445,13 @@
             width: 44px; height: 44px;
             border-radius: 50%;
             background: var(--accent);
-            color: #fff;
+            color: #0a0e0a;
             border: none;
             cursor: pointer;
             display: none;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(45,106,79,0.35);
+            box-shadow: 0 4px 16px rgba(74,222,128,0.25);
             z-index: 40;
             transition: background 0.15s;
         }
@@ -552,21 +551,34 @@ let currentCat  = '全部';
 let searchKeyword = '';
 let colMap = {};
 
-// Category → strip colour
 const CAT_COLOR = {
-    '百岳':   '#5b3fa0',
-    '小百岳': '#2d6a4f',
-    '健行':   '#1e6a8a',
-    '中級山': '#5a7a1e',
-    '縱走':   '#b5652e',
-    '特殊':   '#a02d2d',
+    '百岳':   '#a78bfa',
+    '小百岳': '#4ade80',
+    '健行':   '#38bdf8',
+    '中級山': '#a3e635',
+    '縱走':   '#fb923c',
+    '特殊':   '#f87171',
 };
 
-function getCatColor(categoryStr) {
+function getCatColors(categoryStr) {
+    const matched = [];
     for (const [key, val] of Object.entries(CAT_COLOR)) {
-        if (categoryStr.includes(key)) return val;
+        if (categoryStr.includes(key)) matched.push(val);
     }
-    return '#c8bfb0';
+    if (!matched.length) return ['#3a3f4e'];
+    return matched;
+}
+
+function buildStripGradient(colors) {
+    if (colors.length === 1) return colors[0];
+    // equal-width segments
+    const pct = 100 / colors.length;
+    const stops = colors.map((c, i) => {
+        const from = (i * pct).toFixed(1);
+        const to   = ((i + 1) * pct).toFixed(1);
+        return `${c} ${from}%, ${c} ${to}%`;
+    });
+    return `linear-gradient(to bottom, ${stops.join(', ')})`;
 }
 
 const getIdx = (k) => colMap[k] !== undefined ? colMap[k] : colMap[Object.keys(colMap).find(x => x && x.includes(k))];
@@ -632,7 +644,9 @@ function renderData(data) {
         grouped[year].forEach(item => {
             const row = document.createElement('div');
             row.className = 'record-item';
-            row.style.setProperty('--strip-color', getCatColor(item.category));
+            const colors   = getCatColors(item.category);
+            const gradient = buildStripGradient(colors);
+            row.style.setProperty('--strip-color', gradient);
 
             const arrowSvg = `<svg class="record-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
             const futureMark = item.isFuture ? `<span class="record-future-tag">(規劃中)</span>` : '';
@@ -756,16 +770,21 @@ function showDetail(row) {
             return;
         }
 
+        const TAG_STYLES = {
+            '百岳':   'background:#1e1a2e;color:#a78bfa',
+            '小百岳': 'background:#132318;color:#4ade80',
+            '健行':   'background:#0f1e2a;color:#38bdf8',
+            '中級山': 'background:#1a2310;color:#a3e635',
+            '縱走':   'background:#271a0e;color:#fb923c',
+            '特殊':   'background:#271010;color:#f87171',
+        };
+
         if (f.k === '分類') {
             const cats = val.toString().split(/[,，\s]+/).filter(Boolean);
             const tagsHtml = cats.map(cat => {
-                let style = `background:var(--tag-default-bg);color:var(--tag-default)`;
-                for (const [key] of Object.entries(CAT_COLOR)) {
-                    if (cat.includes(key)) {
-                        const cssKey = key;
-                        style = `background:var(--tag-${cssKey}-bg);color:var(--tag-${cssKey})`;
-                        break;
-                    }
+                let style = 'background:#1c1f27;color:#8a90a0';
+                for (const [key, s] of Object.entries(TAG_STYLES)) {
+                    if (cat.includes(key)) { style = s; break; }
                 }
                 return `<span class="tag" style="${style}">${cat}</span>`;
             }).join('');
