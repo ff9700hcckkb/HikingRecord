@@ -16,6 +16,29 @@
         .filter-content.open { max-height: 800px; opacity: 1; margin-top: 1rem; }
         #back-to-top { position: fixed; bottom: 2rem; right: 1.5rem; display: none; z-index: 40; }
         input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+                /* 年份與分類容器：強制不換行，並支援橫向滾動 */
+        #year-filter, #cat-filter {
+            display: flex;
+            flex-wrap: nowrap; /* 強制不換行 */
+            overflow-x: auto;  /* 寬度不足時顯示橫向滾動 */
+            gap: 8px;
+            padding-bottom: 8px; /* 留一點空間給滾動手感 */
+            -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動更順暢 */
+        }
+        
+        /* 隱藏捲軸條 (讓介面更乾淨) */
+        #year-filter::-webkit-scrollbar, 
+        #cat-filter::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* 確保按鈕文字不會斷行 */
+        .year-btn, .filter-btn {
+            flex: 0 0 auto; /* 防止按鈕被擠壓變形 */
+            white-space: nowrap;
+        }
+        
     </style>
 </head>
 <body class="font-sans antialiased text-[16px]"> <div class="max-w-2xl mx-auto py-8 px-5">
@@ -50,22 +73,27 @@
                 <svg id="chevron" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </button>
 
-            <div id="filter-panel" class="filter-content">
-                <div class="pt-5 space-y-5 border-t border-slate-700/50 mt-5">
-                    <div>
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">年份</label>
-                        <div id="year-filter" class="flex flex-wrap gap-2">
-                            <button onclick="updateYear('全部', this)" class="year-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all">全部</button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">分類</label>
-                        <div id="cat-filter" class="flex flex-wrap gap-2">
-                            <button onclick="updateCat('全部', this)" class="filter-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all">全部</button>
-                        </div>
-                    </div>
-                </div>
+          <div id="filter-panel" class="filter-content">
+    <div class="pt-5 space-y-5 border-t border-slate-700/50 mt-5">
+        <div>
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">年份</label>
+            <!-- 刪除了 flex-wrap，增加了 overflow-x-auto 和 no-scrollbar -->
+            <div id="year-filter" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                <button onclick="updateYear('全部', this)" class="year-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all shrink-0">全部</button>
             </div>
+        </div>
+
+        <div>
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">分類</label>
+            <!-- 刪除了 flex-wrap，增加了 overflow-x-auto 和 no-scrollbar -->
+            <div id="cat-filter" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                <button onclick="updateCat('全部', this)" class="filter-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all shrink-0">全部</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+            
         </div>
         
         <div id="record-container" class="space-y-12"></div>
@@ -198,30 +226,52 @@
         }
         function updateHint() { document.getElementById('active-filter-hint').innerText = `${currentYear} / ${currentCat}`; }
         const getIdx = (k) => colMap[k] !== undefined ? colMap[k] : colMap[Object.keys(colMap).find(x => x.includes(k))];
-     function initFilterButtons() {
+    function initFilterButtons() {
+            // 取得年份並由大到小排序 (最新的在最左邊)
             const years = [...new Set(allProcessedData.map(d => d.year))].sort((a, b) => b - a);
             
-            // --- 優化點：拆分多選分類，提取單一標籤 ---
+            // 提取單一分類標籤
             let allCats = [];
             allProcessedData.forEach(d => {
                 const splitCats = d.category.split(/[,，\s]+/).filter(c => c);
                 allCats = allCats.concat(splitCats);
             });
-            const cats = [...new Set(allCats)]; // 取得不重複的單一標籤清單
-            // ---------------------------------------
+            const cats = [...new Set(allCats)];
 
-            const yc = document.getElementById('year-filter'), cc = document.getElementById('cat-filter');
+            const yc = document.getElementById('year-filter'), 
+                  cc = document.getElementById('cat-filter');
             
+            yc.innerHTML = '';
+            cc.innerHTML = '';
+
+            // 建立「全部年份」按鈕
+            const allYearBtn = document.createElement('button');
+            allYearBtn.className = 'year-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
+            allYearBtn.innerText = '全部';
+            allYearBtn.onclick = (e) => updateYear('全部', e.target);
+            yc.appendChild(allYearBtn);
+
             years.forEach(y => {
                 const b = document.createElement('button');
                 b.className = 'year-btn px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
-                b.innerText = y; b.onclick = (e) => updateYear(y, e.target); yc.appendChild(b);
+                b.innerText = y; 
+                b.onclick = (e) => updateYear(y, e.target); 
+                yc.appendChild(b);
             });
+
+            // 分類按鈕比照辦理 (也支援橫向滑動)
+            const allCatBtn = document.createElement('button');
+            allCatBtn.className = 'filter-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
+            allCatBtn.innerText = '全部';
+            allCatBtn.onclick = (e) => updateCat('全部', e.target);
+            cc.appendChild(allCatBtn);
 
             cats.forEach(c => {
                 const b = document.createElement('button');
                 b.className = 'filter-btn px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
-                b.innerText = c; b.onclick = (e) => updateCat(c, e.target); cc.appendChild(b);
+                b.innerText = c; 
+                b.onclick = (e) => updateCat(c, e.target); 
+                cc.appendChild(b);
             });
         }
       function showDetail(row) {
