@@ -29,7 +29,7 @@
 
         /* 2. 針對主列表行程標題加大 (對應你 card 內的標題) */
         .card-title, h3 {
-            font-size: 1.25rem !important; 
+            font-size: 1.4rem !important; 
             font-weight: 600;
             margin-bottom: 0.25rem;
         }
@@ -333,7 +333,7 @@
                 if(val && f.k !== '路線') {
                     if(f.k === 'GPX' && val.toString().includes('http')) {
                         // GPX 按鈕樣式
-                        html += `<div class="pt-4"><a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-4 rounded-2xl text-base shadow-lg hover:bg-emerald-500 transition">查看 GPX 軌跡檔案</a></div>`;
+                        html += `<div class="pt-4"><a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-4 rounded-2xl text-base shadow-lg hover:bg-emerald-500 transition"> gpx記錄</a></div>`;
                     } else if(f.k === '分類') {
                         // 解析多重標籤並設定顏色
                         const cats = val.toString().split(/[,，\s]+/).filter(c => c);
