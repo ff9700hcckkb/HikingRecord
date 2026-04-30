@@ -3,375 +3,798 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hiking Logs</title>
+    <title>登山記錄</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-        /* 載入燕瑟體 */
+    <style>
         @font-face {
             font-family: 'Iansui';
             src: url('https://cdn.jsdelivr.net/gh/ButTaiwan/iansui@master/Iansui-Regular.ttf') format('truetype');
             font-display: swap;
         }
-        
-        /* 1. 應用到全站並整體放大字級 */
-        html {
-            font-size: 17px; /* 提高基礎字級 */
+
+        :root {
+            --bg: #f5f2ec;
+            --surface: #ffffff;
+            --border: #e0dbd0;
+            --text-primary: #1a1a1a;
+            --text-secondary: #6b6355;
+            --text-muted: #a89f91;
+            --accent: #2d6a4f;
+            --accent-light: #e8f4ef;
+            --accent-hover: #1e4d38;
+            --year-badge: #2d6a4f;
+            --future: #b5652e;
+            --tag-百岳: #5b3fa0;
+            --tag-百岳-bg: #f0ecfa;
+            --tag-小百岳: #2d6a4f;
+            --tag-小百岳-bg: #e8f4ef;
+            --tag-健行: #1e6a8a;
+            --tag-健行-bg: #e6f3f8;
+            --tag-中級山: #5a7a1e;
+            --tag-中級山-bg: #eff5e6;
+            --tag-縱走: #b5652e;
+            --tag-縱走-bg: #faf0e6;
+            --tag-特殊: #a02d2d;
+            --tag-特殊-bg: #faeaea;
+            --tag-default: #6b6355;
+            --tag-default-bg: #f0ede8;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { font-size: 16px; }
 
         body {
-            font-family: 'Iansui', sans-serif;
-            letter-spacing: 0.03em;
-            background-color: #0f172a; 
-            color: #f1f5f9;
+            font-family: 'Iansui', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
             line-height: 1.6;
+            min-height: 100vh;
         }
 
-        /* 2. 針對主列表行程標題加大 (對應你 card 內的標題) */
-        .card-title, h3 {
-            font-size: 1.4rem !important; 
+        /* ── Sticky search bar ── */
+        #sticky-bar {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+        }
+
+        .search-wrap {
+            position: relative;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .search-wrap svg.icon-search {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px; height: 18px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        #keyword-search {
+            width: 100%;
+            padding: 10px 40px 10px 38px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            font-family: inherit;
+            font-size: 1rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #keyword-search:focus { border-color: var(--accent); }
+        #keyword-search::placeholder { color: var(--text-muted); }
+
+        #clear-search {
+            position: absolute;
+            right: 10px; top: 50%;
+            transform: translateY(-50%);
+            background: none; border: none;
+            cursor: pointer; padding: 4px;
+            color: var(--text-muted);
+            display: none;
+        }
+        #clear-search:hover { color: var(--text-primary); }
+
+        /* ── Main container ── */
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 20px 16px 80px;
+        }
+
+        /* ── Header ── */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        #total-count {
+            font-size: 0.78rem;
             font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        /* 3. 調整按鈕字體大小，確保在水平捲軸中清晰可讀 */
-        .year-btn, .filter-btn {
-            font-size: 1rem !important; /* 加大按鈕字體 */
-            font-weight: 500;
-            flex: 0 0 auto; 
+            color: var(--accent);
+            background: var(--accent-light);
+            border: 1px solid #b7d9c9;
+            padding: 4px 10px;
+            border-radius: 20px;
             white-space: nowrap;
         }
 
-        /* 4. 彈窗內容字級調整 */
-        #modal-body {
-            font-size: 1.1rem;
+        /* ── Filter panel ── */
+        .filter-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
         }
 
-        /* --- 原有功能樣式保持 --- */
-        .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
-        .modal-active { display: flex; align-items: center; justify-content: center; }
-        .filter-btn.active { background-color: #10b981; color: white; border-color: #10b981; }
-        .year-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
-        .filter-content { transition: all 0.3s ease-in-out; max-height: 0; overflow: hidden; opacity: 0; }
-        .filter-content.open { max-height: 800px; opacity: 1; margin-top: 1rem; }
-        #back-to-top { position: fixed; bottom: 2rem; right: 1.5rem; display: none; z-index: 40; }
-        input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
-
-        /* 年份與分類容器：強制不換行，並支援橫向滾動 */
-        #year-filter, #cat-filter {
+        .filter-toggle {
+            width: 100%;
             display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            gap: 8px;
-            padding-bottom: 8px;
-            -webkit-overflow-scrolling: touch;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
         }
-        
-        /* 滾動條優化 (隱藏捲軸) */
-        .no-scrollbar::-webkit-scrollbar,
-        #year-filter::-webkit-scrollbar, 
-        #cat-filter::-webkit-scrollbar {
-            display: none;
+        .filter-toggle:hover { color: var(--text-primary); }
+
+        .filter-toggle-left { display: flex; align-items: center; gap: 6px; }
+
+        #active-filter-hint {
+            font-size: 0.78rem;
+            font-weight: 400;
+            color: var(--text-muted);
         }
 
-        .no-scrollbar, #year-filter, #cat-filter {
-            -ms-overflow-style: none;
+        #chevron { transition: transform 0.25s; width: 16px; height: 16px; }
+
+        .filter-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .filter-body.open { max-height: 400px; }
+
+        .filter-inner {
+            padding: 0 16px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .filter-section { margin-top: 14px; }
+        .filter-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+        }
+        .btn-row::-webkit-scrollbar { display: none; }
+
+        .chip {
+            flex-shrink: 0;
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: var(--bg);
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .chip:hover { border-color: var(--accent); color: var(--accent); }
+        .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+        /* ── Record list ── */
+        .year-section { margin-bottom: 28px; }
+
+        .year-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .year-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--year-badge);
+            padding: 2px 10px;
+            border-radius: 4px;
+            letter-spacing: 0.05em;
+        }
+
+        .year-line {
+            flex-grow: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .record-list {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .record-item {
+            display: flex;
+            align-items: center;
+            padding: 13px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+            gap: 10px;
+            position: relative;
+        }
+        .record-item:last-child { border-bottom: none; }
+        .record-item:hover { background: #f9f7f3; }
+        .record-item:active { background: var(--accent-light); }
+
+        /* Left colour strip by category */
+        .record-item::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--strip-color, var(--border));
+            border-radius: 0;
+        }
+        .record-item { padding-left: 17px; }
+
+        .record-date {
+            font-size: 0.82rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: var(--accent);
+            width: 52px;
+            flex-shrink: 0;
+            letter-spacing: -0.01em;
+        }
+
+        .record-name {
+            flex-grow: 1;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .record-name.future { color: var(--future); }
+
+        .record-future-tag {
+            font-size: 0.72rem;
+            color: var(--future);
+            opacity: 0.7;
+            margin-left: 5px;
+        }
+
+        .record-arrow {
+            width: 16px; height: 16px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+        .record-item:hover .record-arrow { color: var(--accent); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 50;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0;
+        }
+        @media (min-width: 480px) {
+            .modal-overlay { align-items: center; padding: 20px; }
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-card {
+            background: var(--surface);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 20px 20px 0 0;
+            padding: 24px 20px 32px;
+            max-height: 88vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        @media (min-width: 480px) {
+            .modal-card { border-radius: 16px; }
+        }
+
+        .modal-drag { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+        @media (min-width: 480px) { .modal-drag { display: none; } }
+
+        .modal-close {
+            position: absolute;
+            top: 18px; right: 18px;
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close:hover { background: var(--border); color: var(--text-primary); }
+
+        #modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            padding-right: 36px;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .modal-field {
+            display: flex;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .modal-field:last-child { border-bottom: none; }
+
+        .modal-field-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            width: 44px;
+            flex-shrink: 0;
+            padding-top: 1px;
+        }
+
+        .modal-field-value {
+            font-size: 0.97rem;
+            color: var(--text-primary);
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 9px;
+            border-radius: 4px;
+            margin-right: 5px;
+            margin-bottom: 3px;
+        }
+
+        .gpx-btn {
+            display: block;
+            width: 100%;
+            margin-top: 16px;
+            padding: 13px;
+            text-align: center;
+            background: var(--accent);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            transition: background 0.15s;
+        }
+        .gpx-btn:hover { background: var(--accent-hover); }
+
+        /* ── Back to top ── */
+        #back-to-top {
+            position: fixed;
+            bottom: 24px; right: 18px;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(45,106,79,0.35);
+            z-index: 40;
+            transition: background 0.15s;
+        }
+        #back-to-top:hover { background: var(--accent-hover); }
+        #back-to-top svg { width: 18px; height: 18px; }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
         }
     </style>
 </head>
-<body class="font-sans antialiased text-[16px]"> <div class="max-w-2xl mx-auto py-8 px-5">
-        <header class="mb-6 flex justify-between items-end">
-            <div>
-                <h1 class="text-4xl font-black text-white leading-none">登山記錄</h1>
-                <p class="text-slate-500 text-base mt-2">
-               <p class="text-slate-500 text-xl mt-2">We are alive!!!!!!!</p>
-            </div>
-            <div id="total-count" class="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20 uppercase">Loading...</div>
-        </header>
+<body>
 
-        <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-4 mb-8 shadow-xl">
-            <div class="relative mb-5">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <input type="search" id="keyword-search" oninput="handleSearch()" 
-                    class="block w-full pl-11 pr-10 py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-base text-white placeholder-slate-500 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all outline-none" 
-                    placeholder="搜尋路線、人員或關鍵字...">
-                <button id="clear-search" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-white">
-                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
-                </button>
-            </div>
-
-            <button onclick="toggleFilter()" class="w-full flex justify-between items-center text-slate-400 font-bold text-base hover:text-slate-200 transition-colors">
-                <div class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-                    <span>進階條件篩選</span>
-                    <span id="active-filter-hint" class="text-xs font-normal text-slate-600 ml-2">全部 / 全部</span>
-                </div>
-                <svg id="chevron" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-            </button>
-
-          <div id="filter-panel" class="filter-content">
-    <div class="pt-5 space-y-5 border-t border-slate-700/50 mt-5">
-        <div>
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">年份</label>
-            <!-- 刪除了 flex-wrap，增加了 overflow-x-auto 和 no-scrollbar -->
-            <div id="year-filter" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                <button onclick="updateYear('全部', this)" class="year-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all shrink-0">全部</button>
-            </div>
-        </div>
-
-        <div>
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">分類</label>
-            <!-- 刪除了 flex-wrap，增加了 overflow-x-auto 和 no-scrollbar -->
-            <div id="cat-filter" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                <button onclick="updateCat('全部', this)" class="filter-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all shrink-0">全部</button>
-            </div>
-        </div>
+<!-- Sticky search -->
+<div id="sticky-bar">
+    <div class="search-wrap">
+        <svg class="icon-search" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="search" id="keyword-search" placeholder="搜尋路線、人員或關鍵字…" oninput="handleSearch()">
+        <button id="clear-search" onclick="clearSearch()" aria-label="清除">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+        </button>
     </div>
 </div>
 
-            
+<div class="container">
+    <header>
+        <div>
+            <h1>登山記錄</h1>
+            <p class="subtitle">We are alive!!!!!!!</p>
         </div>
-        
-        <div id="record-container" class="space-y-12"></div>
+        <div id="total-count">載入中…</div>
+    </header>
+
+    <!-- Filter -->
+    <div class="filter-panel">
+        <button class="filter-toggle" onclick="toggleFilter()">
+            <div class="filter-toggle-left">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h18M7 8h10M11 12h2"/>
+                </svg>
+                篩選條件
+                <span id="active-filter-hint">全部 / 全部</span>
+            </div>
+            <svg id="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+        <div id="filter-body" class="filter-body">
+            <div class="filter-inner">
+                <div class="filter-section">
+                    <span class="filter-label">年份</span>
+                    <div class="btn-row" id="year-filter"></div>
+                </div>
+                <div class="filter-section">
+                    <span class="filter-label">分類</span>
+                    <div class="btn-row" id="cat-filter"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <button id="back-to-top" onclick="scrollToTop()" class="bg-emerald-600 text-white p-4 rounded-full shadow-lg shadow-emerald-900/40 border border-emerald-400/20">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" /></svg>
-    </button>
+    <div id="record-container"><div class="loading">載入中…</div></div>
+</div>
 
-    <div id="detail-modal" class="modal p-4" onclick="closeModal()">
-        <div class="bg-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative border border-slate-700" onclick="event.stopPropagation()">
-            <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-500 hover:text-white text-3xl">&times;</button>
-            <h2 id="modal-title" class="text-2xl font-bold text-emerald-400 border-b border-slate-700 pb-5 mb-5"></h2>
-            <div id="modal-body" class="space-y-5 text-base"></div> </div>
+<!-- Back to top -->
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="回頂部">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"/>
+    </svg>
+</button>
+
+<!-- Detail modal -->
+<div id="detail-modal" class="modal-overlay" onclick="closeModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-drag"></div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div id="modal-title"></div>
+        <div id="modal-body"></div>
     </div>
+</div>
 
-    <script>
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRssVI_ETyZAWp_ZzR6NSQr49bPhLajgVl83G1PWP2Ytb7axuYZQEtNf9NgpfJijFRQfdauQnulc0fS/pub?output=csv';
-        let allProcessedData = []; 
-        let currentYear = '全部';
-        let currentCat = '全部';
-        let searchKeyword = '';
-        let colMap = {};
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script>
+const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRssVI_ETyZAWp_ZzR6NSQr49bPhLajgVl83G1PWP2Ytb7axuYZQEtNf9NgpfJijFRQfdauQnulc0fS/pub?output=csv';
 
-        Papa.parse(csvUrl, {
-            download: true,
-            header: false,
-            skipEmptyLines: true,
-            complete: function(results) {
-                if (results.data.length === 0) return;
-                results.data[0].forEach((col, i) => { if (col) colMap[col.trim()] = i; });
-                const dateIdx = getIdx("日期"), catIdx = getIdx("分類"), routeIdx = getIdx("路線"), distIdx = getIdx("距離");
-                allProcessedData = results.data.slice(1).map(row => {
-                    let d = row[dateIdx] ? row[dateIdx].toString().trim().replace(/\./g, '/') : "";
-                    const isFuture = row[distIdx] && row[distIdx].toString().includes("未確定");
-                    return {
-                        year: d.substring(0, 4),
-                        mmdd: d.includes('/') ? d.substring(d.indexOf('/') + 1) : d,
-                        category: row[catIdx] ? row[catIdx].trim() : "未分類",
-                        name: row[routeIdx] || "未命名行程",
-                        isFuture: isFuture,
-                        searchString: row.join('|').toLowerCase(),
-                        raw: row
-                    };
-                }).filter(item => item.year.length === 4);
-                initFilterButtons();
-                applyFilters();
-                updateTotalCount(allProcessedData.length);
-            }
+let allProcessedData = [];
+let currentYear = '全部';
+let currentCat  = '全部';
+let searchKeyword = '';
+let colMap = {};
+
+// Category → strip colour
+const CAT_COLOR = {
+    '百岳':   '#5b3fa0',
+    '小百岳': '#2d6a4f',
+    '健行':   '#1e6a8a',
+    '中級山': '#5a7a1e',
+    '縱走':   '#b5652e',
+    '特殊':   '#a02d2d',
+};
+
+function getCatColor(categoryStr) {
+    for (const [key, val] of Object.entries(CAT_COLOR)) {
+        if (categoryStr.includes(key)) return val;
+    }
+    return '#c8bfb0';
+}
+
+const getIdx = (k) => colMap[k] !== undefined ? colMap[k] : colMap[Object.keys(colMap).find(x => x && x.includes(k))];
+
+Papa.parse(csvUrl, {
+    download: true,
+    header: false,
+    skipEmptyLines: true,
+    complete(results) {
+        if (!results.data.length) return;
+        results.data[0].forEach((col, i) => { if (col) colMap[col.trim()] = i; });
+        const dateIdx  = getIdx('日期');
+        const catIdx   = getIdx('分類');
+        const routeIdx = getIdx('路線');
+        const distIdx  = getIdx('距離');
+
+        allProcessedData = results.data.slice(1).map(row => {
+            let d = row[dateIdx] ? row[dateIdx].toString().trim().replace(/\./g, '/') : '';
+            const isFuture = row[distIdx] && row[distIdx].toString().includes('未確定');
+            return {
+                year:     d.substring(0, 4),
+                mmdd:     d.includes('/') ? d.substring(d.indexOf('/') + 1) : d,
+                category: row[catIdx] ? row[catIdx].trim() : '未分類',
+                name:     row[routeIdx] || '未命名行程',
+                isFuture,
+                searchString: row.join('|').toLowerCase(),
+                raw: row
+            };
+        }).filter(item => item.year.length === 4);
+
+        initFilterButtons();
+        applyFilters();
+        updateTotalCount(allProcessedData.length);
+    }
+});
+
+function renderData(data) {
+    const container = document.getElementById('record-container');
+    container.innerHTML = '';
+    if (!data.length) {
+        container.innerHTML = '<div class="empty-state">找不到符合條件的記錄</div>';
+        return;
+    }
+
+    const grouped = {};
+    data.forEach(item => {
+        if (!grouped[item.year]) grouped[item.year] = [];
+        grouped[item.year].push(item);
+    });
+
+    Object.keys(grouped).sort((a,b) => b-a).forEach(year => {
+        const section = document.createElement('div');
+        section.className = 'year-section';
+
+        const header = document.createElement('div');
+        header.className = 'year-header';
+        header.innerHTML = `<span class="year-badge">${year}</span><div class="year-line"></div>`;
+        section.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'record-list';
+
+        grouped[year].forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'record-item';
+            row.style.setProperty('--strip-color', getCatColor(item.category));
+
+            const arrowSvg = `<svg class="record-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            const futureMark = item.isFuture ? `<span class="record-future-tag">(規劃中)</span>` : '';
+
+            row.innerHTML = `
+                <span class="record-date">${item.mmdd}</span>
+                <span class="record-name ${item.isFuture ? 'future' : ''}">${item.name}${futureMark}</span>
+                ${arrowSvg}
+            `;
+            row.addEventListener('click', () => showDetail(item.raw));
+            list.appendChild(row);
         });
 
-     function renderData(data) {
-            const container = document.getElementById('record-container');
-            container.innerHTML = '';
-            const grouped = {};
-            data.forEach(item => {
-                if (!grouped[item.year]) grouped[item.year] = [];
-                grouped[item.year].push(item);
-            });
-            const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
-            if(sortedYears.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-600 py-10 text-base italic">找不到符合條件的記錄</div>';
-                return;
-            }
-            sortedYears.forEach(year => {
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div class="flex items-center mb-5">
-                        <span class="bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-black uppercase tracking-widest shadow-md">${year}</span>
-                        <div class="flex-grow h-px bg-slate-800 ml-4"></div>
-                    </div>
-                    <div class="space-y-1">
-                        ${grouped[year].map(item => `
-                            <div class="flex items-center group cursor-pointer hover:bg-slate-800/40 p-4 rounded-2xl transition" onclick='showDetail(${JSON.stringify(item.raw).replace(/'/g, "&apos;")})'>
-                                <span class="text-emerald-500 font-mono font-bold w-20 shrink-0 text-sm tracking-tight">${item.mmdd}</span>
-                                <span class="text-base font-bold truncate flex-grow" style="color: ${item.isFuture ? '#FFAF60' : '#f8fafc'};">
-                                    ${item.name} 
-                                    ${item.isFuture ? '<span class="text-xs font-normal opacity-60 ml-2">(規劃中)</span>' : ''}
-                                </span>
-                                <svg class="h-4 w-4 text-slate-700 group-hover:text-emerald-500 transition ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+        section.appendChild(list);
+        container.appendChild(section);
+    });
+}
+
+function handleSearch() {
+    const input = document.getElementById('keyword-search');
+    searchKeyword = input.value.toLowerCase().trim();
+    document.getElementById('clear-search').style.display = searchKeyword ? 'flex' : 'none';
+    applyFilters();
+}
+
+function clearSearch() {
+    document.getElementById('keyword-search').value = '';
+    handleSearch();
+}
+
+function applyFilters() {
+    let filtered = allProcessedData;
+    if (currentYear !== '全部') filtered = filtered.filter(d => d.year === currentYear);
+    if (currentCat  !== '全部') filtered = filtered.filter(d => d.category.includes(currentCat));
+    if (searchKeyword) filtered = filtered.filter(d => d.searchString.includes(searchKeyword));
+    renderData(filtered);
+    updateTotalCount(filtered.length);
+}
+
+function updateTotalCount(n) {
+    document.getElementById('total-count').textContent = `找到 ${n} 筆`;
+}
+
+function toggleFilter() {
+    const body = document.getElementById('filter-body');
+    const chevron = document.getElementById('chevron');
+    body.classList.toggle('open');
+    chevron.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+function updateYear(y, el) {
+    currentYear = y;
+    document.querySelectorAll('.year-chip').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    updateHint(); applyFilters();
+}
+
+function updateCat(c, el) {
+    currentCat = c;
+    document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    updateHint(); applyFilters();
+}
+
+function updateHint() {
+    document.getElementById('active-filter-hint').textContent = `${currentYear} / ${currentCat}`;
+}
+
+function initFilterButtons() {
+    const years = [...new Set(allProcessedData.map(d => d.year))].sort((a,b) => b-a);
+    let allCats = [];
+    allProcessedData.forEach(d => {
+        d.category.split(/[,，\s]+/).filter(Boolean).forEach(c => allCats.push(c));
+    });
+    const cats = [...new Set(allCats)];
+
+    const yc = document.getElementById('year-filter');
+    const cc = document.getElementById('cat-filter');
+    yc.innerHTML = '';
+    cc.innerHTML = '';
+
+    const mkBtn = (label, extra, clickFn) => {
+        const b = document.createElement('button');
+        b.className = `chip ${extra}`;
+        b.textContent = label;
+        b.onclick = (e) => clickFn(label, e.currentTarget);
+        return b;
+    };
+
+    const allY = mkBtn('全部', 'year-chip active', updateYear);
+    yc.appendChild(allY);
+    years.forEach(y => yc.appendChild(mkBtn(y, 'year-chip', updateYear)));
+
+    const allC = mkBtn('全部', 'cat-chip active', updateCat);
+    cc.appendChild(allC);
+    cats.forEach(c => cc.appendChild(mkBtn(c, 'cat-chip', updateCat)));
+}
+
+function showDetail(row) {
+    document.getElementById('modal-title').textContent = row[getIdx('路線')] || '行程詳情';
+
+    const fields = [
+        { l: '日期', k: '日期' },
+        { l: '分類', k: '分類' },
+        { l: '人員', k: '人員' },
+        { l: '距離', k: '距離' },
+        { l: '天數', k: '天數' },
+        { l: '備註', k: '備註' },
+        { l: 'GPX',  k: 'GPX'  },
+    ];
+
+    let html = '';
+    let gpxHtml = '';
+
+    fields.forEach(f => {
+        const val = row[getIdx(f.k)];
+        if (!val || f.k === '路線') return;
+
+        if (f.k === 'GPX' && val.toString().includes('http')) {
+            gpxHtml = `<a href="${val}" target="_blank" class="gpx-btn">📍 GPX 記錄</a>`;
+            return;
         }
 
-        function handleSearch() {
-            const input = document.getElementById('keyword-search');
-            const clearBtn = document.getElementById('clear-search');
-            searchKeyword = input.value.toLowerCase().trim();
-            clearBtn.classList.toggle('hidden', searchKeyword === '');
-            applyFilters();
-        }
-        function clearSearch() { document.getElementById('keyword-search').value = ''; handleSearch(); }
-    function applyFilters() {
-            let filtered = allProcessedData;
-            
-            // 1. 年份篩選
-            if (currentYear !== '全部') filtered = filtered.filter(d => d.year === currentYear);
-            
-            // 2. 分類篩選：調整為「包含」邏輯
-            if (currentCat !== '全部') {
-                filtered = filtered.filter(d => d.category.includes(currentCat));
-            }
-            
-            // 3. 關鍵字搜尋
-            if (searchKeyword !== '') filtered = filtered.filter(d => d.searchString.includes(searchKeyword));
-
-            renderData(filtered);
-            updateTotalCount(filtered.length);
-        }
-        function updateTotalCount(count) { document.getElementById('total-count').innerText = `找到 ${count} 筆記錄`; }
-        function toggleFilter() {
-            const panel = document.getElementById('filter-panel');
-            const chevron = document.getElementById('chevron');
-            panel.classList.toggle('open');
-            chevron.style.transform = panel.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
-        }
-        function updateYear(y, el) {
-            currentYear = y;
-            document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active'); updateHint(); applyFilters();
-        }
-        function updateCat(c, el) {
-            currentCat = c;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active'); updateHint(); applyFilters();
-        }
-        function updateHint() { document.getElementById('active-filter-hint').innerText = `${currentYear} / ${currentCat}`; }
-        const getIdx = (k) => colMap[k] !== undefined ? colMap[k] : colMap[Object.keys(colMap).find(x => x.includes(k))];
-    function initFilterButtons() {
-            // 取得年份並由大到小排序 (最新的在最左邊)
-            const years = [...new Set(allProcessedData.map(d => d.year))].sort((a, b) => b - a);
-            
-            // 提取單一分類標籤
-            let allCats = [];
-            allProcessedData.forEach(d => {
-                const splitCats = d.category.split(/[,，\s]+/).filter(c => c);
-                allCats = allCats.concat(splitCats);
-            });
-            const cats = [...new Set(allCats)];
-
-            const yc = document.getElementById('year-filter'), 
-                  cc = document.getElementById('cat-filter');
-            
-            yc.innerHTML = '';
-            cc.innerHTML = '';
-
-            // 建立「全部年份」按鈕
-            const allYearBtn = document.createElement('button');
-            allYearBtn.className = 'year-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
-            allYearBtn.innerText = '全部';
-            allYearBtn.onclick = (e) => updateYear('全部', e.target);
-            yc.appendChild(allYearBtn);
-
-            years.forEach(y => {
-                const b = document.createElement('button');
-                b.className = 'year-btn px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
-                b.innerText = y; 
-                b.onclick = (e) => updateYear(y, e.target); 
-                yc.appendChild(b);
-            });
-
-            // 分類按鈕比照辦理 (也支援橫向滑動)
-            const allCatBtn = document.createElement('button');
-            allCatBtn.className = 'filter-btn active px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
-            allCatBtn.innerText = '全部';
-            allCatBtn.onclick = (e) => updateCat('全部', e.target);
-            cc.appendChild(allCatBtn);
-
-            cats.forEach(c => {
-                const b = document.createElement('button');
-                b.className = 'filter-btn px-4 py-2 rounded-lg bg-slate-900 text-slate-400 text-sm border border-slate-700 transition-all';
-                b.innerText = c; 
-                b.onclick = (e) => updateCat(c, e.target); 
-                cc.appendChild(b);
-            });
-        }
-      function showDetail(row) {
-            const modal = document.getElementById('detail-modal');
-            document.getElementById('modal-title').innerText = row[getIdx("路線")] || "行程詳情";
-            
-            const fields = [
-                {l:'日期', k:'日期'},
-                {l:'分類', k:'分類'},
-                {l:'人員', k:'人員'},
-                {l:'距離', k:'距離'},
-                {l:'天數', k:'天數'},
-                {l:'備註', k:'備註'},
-                {l:'GPX', k:'GPX'}
-            ];
-
-            let html = `<div class="grid gap-4">`;
-            fields.forEach(f => {
-                const val = row[getIdx(f.k)];
-                if(val && f.k !== '路線') {
-                    if(f.k === 'GPX' && val.toString().includes('http')) {
-                        // GPX 按鈕樣式
-                        html += `<div class="pt-4"><a href="${val}" target="_blank" class="block w-full text-center bg-emerald-600 text-white font-bold py-4 rounded-2xl text-base shadow-lg hover:bg-emerald-500 transition"> gpx記錄</a></div>`;
-                    } else if(f.k === '分類') {
-                        // 解析多重標籤並設定顏色
-                        const cats = val.toString().split(/[,，\s]+/).filter(c => c);
-                        const tagHtml = cats.map(cat => {
-                            let colorClass = "border-slate-600 text-slate-400 bg-slate-400/5"; 
-                            if(cat.includes("小百岳")) colorClass = "border-emerald-500 text-emerald-500 bg-emerald-500/10";
-                            if(cat.includes("百岳")) colorClass = "border-purple-500 text-purple-500 bg-purple-500/10";
-                            if(cat.includes("健行")) colorClass = "border-sky-500 text-sky-500 bg-sky-500/10";
-                            if(cat.includes("中級山")) colorClass = "border-lime-500 text-lime-500 bg-lime-500/10";
-                            if(cat.includes("縱走")) colorClass = "border-orange-500 text-orange-500 bg-orange-500/10";
-                            if(cat.includes("特殊")) colorClass = "border-rose-500 text-rose-500 bg-rose-500/10";
-                            
-                            return `<span class="px-2 py-0.5 border ${colorClass} text-[11px] rounded font-bold mr-1.5 inline-block whitespace-nowrap">${cat}</span>`;
-                        }).join('');
-                        
-                        // 平行對齊結構 (flex-row)
-                        html += `<div class="flex items-center border-b border-slate-700/50 pb-3">
-                                    <span class="w-20 text-slate-500 shrink-0 font-bold text-sm uppercase tracking-wide">${f.l}</span>
-                                    <div class="flex flex-wrap items-center ml-2">
-                                        ${tagHtml}
-                                    </div>
-                                 </div>`;
-                    } else {
-                        // 一般欄位平行對齊
-                        html += `<div class="flex border-b border-slate-700/50 pb-3">
-                                    <span class="w-20 text-slate-500 shrink-0 font-bold text-sm uppercase tracking-wide">${f.l}</span>
-                                    <span class="text-slate-300 ml-2 leading-relaxed text-base">${val}</span>
-                                 </div>`;
+        if (f.k === '分類') {
+            const cats = val.toString().split(/[,，\s]+/).filter(Boolean);
+            const tagsHtml = cats.map(cat => {
+                let style = `background:var(--tag-default-bg);color:var(--tag-default)`;
+                for (const [key] of Object.entries(CAT_COLOR)) {
+                    if (cat.includes(key)) {
+                        const cssKey = key;
+                        style = `background:var(--tag-${cssKey}-bg);color:var(--tag-${cssKey})`;
+                        break;
                     }
                 }
-            });
-            html += `</div>`;
-            document.getElementById('modal-body').innerHTML = html;
-            modal.classList.add('modal-active');
+                return `<span class="tag" style="${style}">${cat}</span>`;
+            }).join('');
+            html += `<div class="modal-field">
+                <span class="modal-field-label">${f.l}</span>
+                <div class="modal-field-value">${tagsHtml}</div>
+            </div>`;
+        } else {
+            html += `<div class="modal-field">
+                <span class="modal-field-label">${f.l}</span>
+                <span class="modal-field-value">${val}</span>
+            </div>`;
         }
-        window.onscroll = () => { document.getElementById("back-to-top").style.display = (window.scrollY > 300) ? "block" : "none"; };
-        const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-        function closeModal() { document.getElementById('detail-modal').classList.remove('modal-active'); }
-    </script>
+    });
+
+    document.getElementById('modal-body').innerHTML = html + gpxHtml;
+    document.getElementById('detail-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    document.getElementById('detail-modal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+window.addEventListener('scroll', () => {
+    const btn = document.getElementById('back-to-top');
+    btn.style.display = window.scrollY > 300 ? 'flex' : 'none';
+});
+</script>
 </body>
 </html>
