@@ -683,7 +683,7 @@ function clearSearch() {
 function applyFilters() {
     let filtered = allProcessedData;
     if (currentYear !== '全部') filtered = filtered.filter(d => d.year === currentYear);
-    if (currentCat  !== '全部') filtered = filtered.filter(d => d.category.includes(currentCat));
+    if (currentCat  !== '全部') filtered = filtered.filter(d => d.category.split(/[,，\s]+/).filter(Boolean).includes(currentCat));
     if (searchKeyword) filtered = filtered.filter(d => d.searchString.includes(searchKeyword));
     renderData(filtered);
     updateTotalCount(filtered.length);
