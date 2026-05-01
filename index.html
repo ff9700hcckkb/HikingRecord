@@ -554,6 +554,19 @@ let currentCat  = '全部';
 let searchKeyword = '';
 let colMap = {};
 
+const CAT_ORDER = ['百岳', '小百岳', '郊山', '中級山', '縱走', '特殊', '國外'];
+
+function sortTags(tags) {
+    return [...tags].sort((a, b) => {
+        const ia = CAT_ORDER.indexOf(a);
+        const ib = CAT_ORDER.indexOf(b);
+        if (ia === -1 && ib === -1) return 0;
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+    });
+}
+
 const CAT_COLOR = {
     '小百岳': '#4ade80',
     '百岳':   '#a78bfa',
@@ -566,7 +579,7 @@ const CAT_COLOR = {
 
 // Split category string into individual tags first, then match each tag exactly
 function getCatColors(categoryStr) {
-    const tags = categoryStr.split(/[,，\s]+/).filter(Boolean);
+    const tags = sortTags(categoryStr.split(/[,，\s]+/).filter(Boolean));
     const matched = [];
     for (const tag of tags) {
         if (CAT_COLOR[tag]) matched.push(CAT_COLOR[tag]);
@@ -787,7 +800,7 @@ function showDetail(row) {
         };
 
         if (f.k === '分類') {
-            const cats = val.toString().split(/[,，\s]+/).filter(Boolean);
+            const cats = sortTags(val.toString().split(/[,，\s]+/).filter(Boolean));
             const tagsHtml = cats.map(cat => {
                 // Use exact match to avoid '小百岳' being caught by '百岳'
                 const style = TAG_STYLES[cat] || 'background:#1c1f27;color:#8a90a0';
