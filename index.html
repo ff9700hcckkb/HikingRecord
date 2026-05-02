@@ -440,6 +440,8 @@
             transition: background 0.15s;
         }
         .gpx-btn:hover { background: var(--accent-hover); }
+        .garmin-btn { background: #1d6fa4; }
+        .garmin-btn:hover { background: #1a5f8e; }
 
         /* ── Back to top ── */
         #back-to-top {
@@ -774,18 +776,25 @@ function showDetail(row) {
         { l: '距離', k: '距離' },
         { l: '天數', k: '天數' },
         { l: '備註', k: '備註' },
-        { l: 'GPX',  k: 'GPX'  },
+        { l: 'GPX',    k: 'GPX'    },
+        { l: 'Garmin', k: 'Garmin' },
     ];
 
     let html = '';
-    let gpxHtml = '';
+    let gpxUrl = '';
+    let garminUrl = '';
 
     fields.forEach(f => {
         const val = row[getIdx(f.k)];
         if (!val || f.k === '路線') return;
 
         if (f.k === 'GPX' && val.toString().includes('http')) {
-            gpxHtml = `<a href="${val}" target="_blank" class="gpx-btn">📍 GPX 記錄</a>`;
+            gpxUrl = val.toString();
+            return;
+        }
+
+        if (f.k === 'Garmin' && val.toString().includes('http')) {
+            garminUrl = val.toString();
             return;
         }
 
@@ -818,7 +827,24 @@ function showDetail(row) {
         }
     });
 
-    document.getElementById('modal-body').innerHTML = html + gpxHtml;
+    // Build bottom buttons dynamically
+    const btns = [];
+    if (gpxUrl)    btns.push(`<a href="${gpxUrl}" target="_blank" class="gpx-btn">📍 GPX 記錄</a>`);
+    if (garminUrl) btns.push(`<a href="${garminUrl}" target="_blank" class="gpx-btn garmin-btn">⌚ Garmin</a>`);
+
+    let btnHtml = '';
+    if (btns.length === 2) {
+        btnHtml = `<div style="display:flex;gap:8px;margin-top:16px;">${btns.map(b => b.replace('margin-top:16px;', '')).join('')}</div>`;
+        // remove individual margin-top since container handles it
+        btnHtml = `<div style="display:flex;gap:8px;margin-top:16px;">
+            ${gpxUrl    ? `<a href="${gpxUrl}"    target="_blank" class="gpx-btn" style="margin-top:0;flex:1">📍 GPX 記錄</a>` : ''}
+            ${garminUrl ? `<a href="${garminUrl}" target="_blank" class="gpx-btn garmin-btn" style="margin-top:0;flex:1">⌚ Garmin</a>` : ''}
+        </div>`;
+    } else {
+        btnHtml = btns[0] || '';
+    }
+
+    document.getElementById('modal-body').innerHTML = html + btnHtml;
     document.getElementById('detail-modal').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
