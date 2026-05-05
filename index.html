@@ -38,6 +38,8 @@
             --tag-特殊-bg: #271010;
             --tag-國外: #f472b6;
             --tag-國外-bg: #27101e;
+            --tag-高山: #ff6b35;
+            --tag-高山-bg: #271508;
             --tag-default: #8a90a0;
             --tag-default-bg: #1c1f27;
         }
@@ -556,7 +558,7 @@ let currentCat  = '全部';
 let searchKeyword = '';
 let colMap = {};
 
-const CAT_ORDER = ['百岳', '小百岳', '郊山', '中級山', '縱走', '特殊', '國外'];
+const CAT_ORDER = ['百岳', '小百岳', '高山', '郊山', '中級山', '縱走', '特殊', '國外'];
 
 function sortTags(tags) {
     return [...tags].sort((a, b) => {
@@ -577,6 +579,7 @@ const CAT_COLOR = {
     '縱走':   '#facc15',
     '特殊':   '#f87171',
     '國外':   '#f472b6',
+    '高山':   '#ff6b35',
 };
 
 // Split category string into individual tags first, then match each tag exactly
@@ -806,6 +809,7 @@ function showDetail(row) {
             '縱走':   'background:#1e1a06;color:#facc15',
             '特殊':   'background:#271010;color:#f87171',
             '國外':   'background:#27101e;color:#f472b6',
+            '高山':   'background:#271508;color:#ff6b35',
         };
 
         if (f.k === '分類') {
