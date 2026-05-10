@@ -652,7 +652,16 @@ Papa.parse(csvUrl, {
             const isFuture = row[distIdx] && row[distIdx].toString().includes('未確定');
             return {
                 year:     d.substring(0, 4),
-                mmdd:     d.includes('/') ? d.substring(d.indexOf('/') + 1) : d,
+                mmdd:     (() => {
+                    if (!d.includes('/')) return d;
+                    const raw = d.substring(d.indexOf('/') + 1); // e.g. "6/4" or "5/12-13"
+                    // Only pad simple MM/DD (no dash = not a range)
+                    if (!raw.includes('-')) {
+                        const [m, day] = raw.split('/');
+                        return `${m.padStart(2,'0')}/${day.padStart(2,'0')}`;
+                    }
+                    return raw;
+                })(),
                 category: row[catIdx] ? row[catIdx].trim() : '未分類',
                 name:     row[routeIdx] || '未命名行程',
                 isFuture,
