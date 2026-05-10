@@ -701,16 +701,15 @@ function renderData(data) {
             ${chevronSvg}
         `;
         header.addEventListener('click', () => {
+            const body = section.querySelector('.year-body');
             const isOpen = section.classList.contains('open');
             if (isOpen) {
-                // Collapse: set explicit height first, then animate to 0
                 body.style.maxHeight = body.scrollHeight + 'px';
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => { body.style.maxHeight = '0'; });
                 });
                 section.classList.remove('open');
             } else {
-                // Expand: animate to scrollHeight
                 section.classList.add('open');
                 body.style.maxHeight = body.scrollHeight + 'px';
                 body.addEventListener('transitionend', () => {
@@ -749,10 +748,10 @@ function renderData(data) {
         section.appendChild(body);
         container.appendChild(section);
 
-        // Set initial height for open sections after render
         if (isOpen) {
             requestAnimationFrame(() => { body.style.maxHeight = 'none'; });
         }
+    });
 }
 
 function handleSearch() {
