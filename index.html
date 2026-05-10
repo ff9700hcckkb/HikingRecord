@@ -239,7 +239,36 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 0;
+            cursor: pointer;
+            padding: 4px 0;
+            user-select: none;
+        }
+        .year-header:hover .year-badge { background: #1e4d38; }
+
+        .year-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .year-chevron {
+            width: 14px; height: 14px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            transition: transform 0.25s;
+        }
+        .year-section.open .year-chevron { transform: rotate(180deg); }
+
+        .year-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            margin-top: 0;
+        }
+        .year-section.open .year-body {
+            max-height: 9999px;
+            margin-top: 10px;
         }
 
         .year-badge {
@@ -653,14 +682,32 @@ function renderData(data) {
         grouped[item.year].push(item);
     });
 
-    Object.keys(grouped).sort((a,b) => b-a).forEach(year => {
+    const sortedYears = Object.keys(grouped).sort((a,b) => b-a);
+    const latestYear  = sortedYears[0];
+
+    sortedYears.forEach(year => {
+        const isOpen = year === latestYear;
         const section = document.createElement('div');
-        section.className = 'year-section';
+        section.className = `year-section${isOpen ? ' open' : ''}`;
+        section.style.marginBottom = '16px';
+
+        const chevronSvg = `<svg class="year-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>`;
 
         const header = document.createElement('div');
         header.className = 'year-header';
-        header.innerHTML = `<span class="year-badge">${year}</span><div class="year-line"></div>`;
+        header.innerHTML = `
+            <span class="year-badge">${year}</span>
+            <div class="year-line"></div>
+            <span class="year-count">${grouped[year].length} 筆</span>
+            ${chevronSvg}
+        `;
+        header.addEventListener('click', () => {
+            section.classList.toggle('open');
+        });
         section.appendChild(header);
+
+        const body = document.createElement('div');
+        body.className = 'year-body';
 
         const list = document.createElement('div');
         list.className = 'record-list';
@@ -684,7 +731,8 @@ function renderData(data) {
             list.appendChild(row);
         });
 
-        section.appendChild(list);
+        body.appendChild(list);
+        section.appendChild(body);
         container.appendChild(section);
     });
 }
