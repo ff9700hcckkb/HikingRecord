@@ -261,13 +261,12 @@
         .year-section.open .year-chevron { transform: rotate(180deg); }
 
         .year-body {
-            max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease;
+            transition: max-height 0.3s ease, margin-top 0.3s ease;
+            max-height: 0;
             margin-top: 0;
         }
         .year-section.open .year-body {
-            max-height: 9999px;
             margin-top: 10px;
         }
 
@@ -702,7 +701,22 @@ function renderData(data) {
             ${chevronSvg}
         `;
         header.addEventListener('click', () => {
-            section.classList.toggle('open');
+            const isOpen = section.classList.contains('open');
+            if (isOpen) {
+                // Collapse: set explicit height first, then animate to 0
+                body.style.maxHeight = body.scrollHeight + 'px';
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => { body.style.maxHeight = '0'; });
+                });
+                section.classList.remove('open');
+            } else {
+                // Expand: animate to scrollHeight
+                section.classList.add('open');
+                body.style.maxHeight = body.scrollHeight + 'px';
+                body.addEventListener('transitionend', () => {
+                    if (section.classList.contains('open')) body.style.maxHeight = 'none';
+                }, { once: true });
+            }
         });
         section.appendChild(header);
 
@@ -734,7 +748,11 @@ function renderData(data) {
         body.appendChild(list);
         section.appendChild(body);
         container.appendChild(section);
-    });
+
+        // Set initial height for open sections after render
+        if (isOpen) {
+            requestAnimationFrame(() => { body.style.maxHeight = 'none'; });
+        }
 }
 
 function handleSearch() {
