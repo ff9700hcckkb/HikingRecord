@@ -844,6 +844,16 @@ function initFilterButtons() {
     cats.forEach(c => cc.appendChild(mkBtn(c, 'cat-chip', updateCat)));
 }
 
+function linkify(text) {
+    return text.toString().replace(/(https?:\/\/[^\s]+)/g, url => {
+        let label = url;
+        if (url.includes('connect.garmin.com')) label = '🔗 Garmin';
+        else if (url.includes('gpx') || url.includes('strava')) label = '🔗 GPX';
+        else label = '🔗 連結';
+        return `<a href="${url}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">${label}</a>`;
+    });
+}
+
 function showDetail(row) {
     document.getElementById('modal-title').textContent = row[getIdx('路線')] || '行程詳情';
 
@@ -901,7 +911,7 @@ function showDetail(row) {
         } else {
             html += `<div class="modal-field">
                 <span class="modal-field-label">${f.l}</span>
-                <span class="modal-field-value">${val}</span>
+                <span class="modal-field-value">${linkify(val)}</span>
             </div>`;
         }
     });
