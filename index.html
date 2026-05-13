@@ -846,10 +846,9 @@ function initFilterButtons() {
 
 function linkify(text) {
     return text.toString().replace(/(https?:\/\/[^\s]+)/g, url => {
-        let label = url;
-        if (url.includes('connect.garmin.com')) label = '🔗 Garmin';
-        else if (url.includes('gpx') || url.includes('strava')) label = '🔗 GPX';
-        else label = '🔗 連結';
+        let label = '📍 GPX';
+        if (url.includes('connect.garmin.com')) label = '⌚ Garmin';
+        else if (url.includes('hiking.biji.co')) label = '📍 GPX';
         return `<a href="${url}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">${label}</a>`;
     });
 }
