@@ -960,12 +960,22 @@ function showDetail(row) {
 
     document.getElementById('modal-body').innerHTML = html + btnHtml;
     document.getElementById('detail-modal').classList.add('active');
-    document.body.style.overflow = 'hidden';
+    // Safari iOS fix: position fixed to prevent background scroll
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.dataset.scrollY = scrollY;
 }
 
 function closeModal() {
     document.getElementById('detail-modal').classList.remove('active');
-    document.body.style.overflow = '';
+    // Safari iOS fix: restore scroll position
+    const scrollY = parseInt(document.body.dataset.scrollY || '0');
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    window.scrollTo(0, scrollY);
 }
 
 window.addEventListener('scroll', () => {
