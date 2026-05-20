@@ -606,6 +606,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
 const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRssVI_ETyZAWp_ZzR6NSQr49bPhLajgVl83G1PWP2Ytb7axuYZQEtNf9NgpfJijFRQfdauQnulc0fS/pub?output=csv';
+const wishlistUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRssVI_ETyZAWp_ZzR6NSQr49bPhLajgVl83G1PWP2Ytb7axuYZQEtNf9NgpfJijFRQfdauQnulc0fS/pub?output=csv&gid=1520679199';
 
 let allProcessedData = [];
 let currentYear = '全部';
@@ -700,6 +701,7 @@ Papa.parse(csvUrl, {
         initFilterButtons();
         applyFilters();
         updateTotalCount(allProcessedData.length);
+        loadWishlist();
     }
 });
 
@@ -966,6 +968,92 @@ function showDetail(row) {
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = '100%';
     document.body.dataset.scrollY = scrollY;
+}
+
+function loadWishlist() {
+    Papa.parse(wishlistUrl, {
+        download: true,
+        header: false,
+        skipEmptyLines: true,
+        complete(results) {
+            const items = results.data.filter(row => row[0] && row[0].trim());
+            renderWishlist(items);
+        }
+    });
+}
+
+function renderWishlist(items) {
+    const container = document.getElementById('record-container');
+
+    const section = document.createElement('div');
+    section.style.marginTop = '32px';
+
+    // Header (accordion toggle)
+    const header = document.createElement('div');
+    header.className = 'year-header';
+    header.style.cursor = 'pointer';
+    header.innerHTML = `
+        <span class="year-badge" style="background:#3a3f4e;">待爬清單</span>
+        <div class="year-line"></div>
+        <span class="year-count">${items.length} 條</span>
+        <svg class="year-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+        </svg>
+    `;
+
+    const body = document.createElement('div');
+    body.className = 'year-body';
+    body.style.marginTop = '0';
+
+    const list = document.createElement('div');
+    list.className = 'record-list';
+    list.style.marginTop = '10px';
+
+    items.forEach(row => {
+        const name = row[0].trim();
+        const url  = row[1] ? row[1].trim() : '';
+
+        const item = document.createElement('div');
+        item.className = 'record-item';
+        item.style.setProperty('--strip-color', '#3a3f4e');
+        item.style.cursor = url ? 'pointer' : 'default';
+
+        const linkIcon = url
+            ? `<svg class="record-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6m0 0v6m0-6L10 14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+            : '';
+
+        item.innerHTML = `
+            <span class="record-date" style="color:var(--text-muted);width:16px;">▷</span>
+            <span class="record-name">${name}</span>
+            ${linkIcon}
+        `;
+
+        if (url) item.addEventListener('click', () => window.open(url, '_blank'));
+        list.appendChild(item);
+    });
+
+    body.appendChild(list);
+    section.appendChild(header);
+    section.appendChild(body);
+    container.appendChild(section);
+
+    // Accordion toggle
+    header.addEventListener('click', () => {
+        const isOpen = section.classList.contains('open');
+        if (isOpen) {
+            body.style.maxHeight = body.scrollHeight + 'px';
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => { body.style.maxHeight = '0'; });
+            });
+            section.classList.remove('open');
+        } else {
+            section.classList.add('open');
+            body.style.maxHeight = body.scrollHeight + 'px';
+            body.addEventListener('transitionend', () => {
+                if (section.classList.contains('open')) body.style.maxHeight = 'none';
+            }, { once: true });
+        }
+    });
 }
 
 function closeModal() {
