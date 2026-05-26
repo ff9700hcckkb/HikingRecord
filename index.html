@@ -561,7 +561,7 @@
             <p class="subtitle">We are alive!!!!!!!</p>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-            <button id="wishlist-toggle" onclick="toggleView()">待爬</button>
+            <button id="wishlist-toggle" onclick="toggleView()">待爬清單</button>
             <div id="total-count">載入中…</div>
         </div>
     </header>
@@ -1001,7 +1001,7 @@ function toggleView() {
     if (isWishlist) {
         // Back to records
         btn.classList.remove('active');
-        btn.textContent = '待爬';
+        btn.textContent = '待爬清單';
         records.style.display = '';
         wishlist.style.display = 'none';
         filter.style.display = '';
@@ -1014,7 +1014,7 @@ function toggleView() {
         records.style.display = 'none';
         wishlist.style.display = '';
         filter.style.display = 'none';
-        title.textContent = '待爬';
+        title.textContent = '待爬清單';
         document.getElementById('total-count').style.display = 'none';
         window.scrollTo(0, 0);
     }
