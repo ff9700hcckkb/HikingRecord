@@ -494,7 +494,21 @@
         .garmin-btn { background: #1d6fa4; }
         .garmin-btn:hover { background: #1a5f8e; }
 
-        /* ── Back to top ── */
+        #wishlist-toggle {
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1.5px solid #facc15;
+            background: none;
+            color: #facc15;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        #wishlist-toggle:hover { background: #facc1520; }
+        #wishlist-toggle.active { background: #facc15; border-color: #facc15; color: #0a0e0a; font-weight: 700; }
         #back-to-top {
             position: fixed;
             bottom: 24px; right: 18px;
@@ -543,10 +557,13 @@
 <div class="container">
     <header>
         <div>
-            <h1>登山記錄</h1>
+            <h1 id="page-title">登山記錄</h1>
             <p class="subtitle">We are alive!!!!!!!</p>
         </div>
-        <div id="total-count">載入中…</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+            <button id="wishlist-toggle" onclick="toggleView()">待爬清單</button>
+            <div id="total-count">載入中…</div>
+        </div>
     </header>
 
     <!-- Filter -->
@@ -578,6 +595,7 @@
     </div>
 
     <div id="record-container"><div class="loading">載入中…</div></div>
+    <div id="wishlist-container" style="display:none;"></div>
 </div>
 
 <!-- Back to top -->
@@ -970,6 +988,38 @@ function showDetail(row) {
     document.body.dataset.scrollY = scrollY;
 }
 
+let wishlistReady = false;
+
+function toggleView() {
+    const btn = document.getElementById('wishlist-toggle');
+    const records = document.getElementById('record-container');
+    const wishlist = document.getElementById('wishlist-container');
+    const filter = document.querySelector('.filter-panel');
+    const title = document.getElementById('page-title');
+    const isWishlist = btn.classList.contains('active');
+
+    if (isWishlist) {
+        // Back to records
+        btn.classList.remove('active');
+        btn.textContent = '待爬清單';
+        records.style.display = '';
+        wishlist.style.display = 'none';
+        filter.style.display = '';
+        title.textContent = '登山記錄';
+        document.getElementById('total-count').style.display = '';
+    } else {
+        // Show wishlist
+        btn.classList.add('active');
+        btn.textContent = '登山記錄';
+        records.style.display = 'none';
+        wishlist.style.display = '';
+        filter.style.display = 'none';
+        title.textContent = '待爬清單';
+        document.getElementById('total-count').style.display = 'none';
+        window.scrollTo(0, 0);
+    }
+}
+
 function loadWishlist() {
     Papa.parse(wishlistUrl, {
         download: true,
@@ -983,31 +1033,11 @@ function loadWishlist() {
 }
 
 function renderWishlist(items) {
-    const container = document.getElementById('record-container');
-
-    const section = document.createElement('div');
-    section.style.marginTop = '32px';
-
-    // Header (accordion toggle)
-    const header = document.createElement('div');
-    header.className = 'year-header';
-    header.style.cursor = 'pointer';
-    header.innerHTML = `
-        <span class="year-badge" style="background:#3a3f4e;">待爬清單</span>
-        <div class="year-line"></div>
-        <span class="year-count">${items.length} 條</span>
-        <svg class="year-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-        </svg>
-    `;
-
-    const body = document.createElement('div');
-    body.className = 'year-body';
-    body.style.marginTop = '0';
+    const container = document.getElementById('wishlist-container');
+    container.innerHTML = '';
 
     const list = document.createElement('div');
     list.className = 'record-list';
-    list.style.marginTop = '10px';
 
     items.forEach(row => {
         const name = row[0].trim();
@@ -1018,42 +1048,21 @@ function renderWishlist(items) {
         item.style.setProperty('--strip-color', '#3a3f4e');
         item.style.cursor = url ? 'pointer' : 'default';
 
-        const linkIcon = url
+        const icon = url
             ? `<svg class="record-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6m0 0v6m0-6L10 14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
             : '';
 
         item.innerHTML = `
             <span class="record-date" style="color:var(--text-muted);width:16px;">▷</span>
             <span class="record-name">${name}</span>
-            ${linkIcon}
+            ${icon}
         `;
 
         if (url) item.addEventListener('click', () => window.open(url, '_blank'));
         list.appendChild(item);
     });
 
-    body.appendChild(list);
-    section.appendChild(header);
-    section.appendChild(body);
-    container.appendChild(section);
-
-    // Accordion toggle
-    header.addEventListener('click', () => {
-        const isOpen = section.classList.contains('open');
-        if (isOpen) {
-            body.style.maxHeight = body.scrollHeight + 'px';
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => { body.style.maxHeight = '0'; });
-            });
-            section.classList.remove('open');
-        } else {
-            section.classList.add('open');
-            body.style.maxHeight = body.scrollHeight + 'px';
-            body.addEventListener('transitionend', () => {
-                if (section.classList.contains('open')) body.style.maxHeight = 'none';
-            }, { once: true });
-        }
-    });
+    container.appendChild(list);
 }
 
 function closeModal() {
