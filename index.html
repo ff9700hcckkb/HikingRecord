@@ -48,6 +48,70 @@
 
         html { font-size: 16px; }
 
+        /* ── Password overlay ── */
+        #pw-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 32px;
+        }
+
+        #pw-overlay h2 {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        #pw-overlay p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        #pw-input {
+            width: 100%;
+            max-width: 280px;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            font-family: inherit;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            text-align: center;
+            letter-spacing: 0.2em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #pw-input:focus { border-color: var(--accent); }
+
+        #pw-btn {
+            width: 100%;
+            max-width: 280px;
+            padding: 12px;
+            background: var(--accent);
+            color: #0a0e0a;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        #pw-btn:hover { background: var(--accent-hover); }
+
+        #pw-error {
+            font-size: 0.85rem;
+            color: #f87171;
+            min-height: 20px;
+        }
+
         body {
             font-family: 'Iansui', 'Noto Sans TC', sans-serif;
             background-color: var(--bg);
@@ -538,6 +602,42 @@
     </style>
 </head>
 <body>
+
+<!-- Password overlay -->
+<div id="pw-overlay">
+    <h2>🏔️ 登山記錄</h2>
+    <p>請輸入密碼以繼續</p>
+    <input type="password" id="pw-input" placeholder="••••••••" maxlength="20"
+        onkeydown="if(event.key==='Enter')checkPassword()">
+    <button id="pw-btn" onclick="checkPassword()">進入</button>
+    <span id="pw-error"></span>
+</div>
+
+<script>
+(function() {
+    const HASH = '8b9a3e2f1c4d5a6b7e8f9a0b1c2d3e4f'; // placeholder, replaced below
+    const PW = '58345834';
+
+    // Check session storage so user doesn't re-enter on refresh
+    if (sessionStorage.getItem('hlg_auth') === PW) {
+        document.getElementById('pw-overlay').style.display = 'none';
+    }
+
+    window.checkPassword = function() {
+        const val = document.getElementById('pw-input').value;
+        if (val === PW) {
+            sessionStorage.setItem('hlg_auth', PW);
+            document.getElementById('pw-overlay').style.display = 'none';
+        } else {
+            const err = document.getElementById('pw-error');
+            err.textContent = '密碼錯誤，請再試一次';
+            document.getElementById('pw-input').value = '';
+            document.getElementById('pw-input').focus();
+            setTimeout(() => { err.textContent = ''; }, 3000);
+        }
+    };
+})();
+</script>
 
 <!-- Sticky search -->
 <div id="sticky-bar">
