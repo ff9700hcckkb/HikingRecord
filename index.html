@@ -990,6 +990,19 @@ function initFilterButtons() {
     cats.forEach(c => cc.appendChild(mkBtn(c, 'cat-chip', updateCat)));
 }
 
+function toggleGear(id) {
+    const body = document.getElementById(id);
+    const chevron = document.getElementById(id + '-chevron');
+    const isOpen = body.style.maxHeight !== '0px' && body.style.maxHeight !== '';
+    if (isOpen) {
+        body.style.maxHeight = '0';
+        chevron.style.transform = '';
+    } else {
+        body.style.maxHeight = body.scrollHeight + 'px';
+        chevron.style.transform = 'rotate(180deg)';
+    }
+}
+
 function linkify(text) {
     return text.toString().replace(/(https?:\/\/[^\s]+)/g, url => {
         let label = '🔗 參考連結';
@@ -1011,6 +1024,7 @@ function showDetail(row) {
         { l: '備註', k: '備註' },
         { l: 'GPX',    k: 'GPX'    },
         { l: 'Garmin', k: 'Garmin' },
+        { l: '裝備', k: '裝備' },
     ];
 
     let html = '';
@@ -1028,6 +1042,32 @@ function showDetail(row) {
 
         if (f.k === 'Garmin' && val.toString().includes('http')) {
             garminUrl = val.toString();
+            return;
+        }
+
+        if (f.k === '裝備') {
+            const gearId = 'gear-body-' + Date.now();
+            html += `
+            <div class="modal-field" style="flex-direction:column;gap:0;padding:0;">
+                <button onclick="toggleGear('${gearId}')" style="
+                    width:100%;display:flex;justify-content:space-between;align-items:center;
+                    padding:11px 0;background:none;border:none;border-bottom:1px solid var(--border);
+                    color:var(--text-secondary);font-family:inherit;font-size:0.78rem;font-weight:700;
+                    text-transform:uppercase;letter-spacing:0.06em;cursor:pointer;
+                ">
+                    <span>🎒 裝備清單</span>
+                    <svg id="${gearId}-chevron" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transition:transform 0.25s;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="${gearId}" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;">
+                    <pre style="
+                        font-family:'Noto Sans TC',sans-serif;font-size:0.82rem;
+                        color:var(--text-secondary);line-height:1.8;
+                        white-space:pre-wrap;padding:10px 0 4px;margin:0;
+                    ">${val}</pre>
+                </div>
+            </div>`;
             return;
         }
 
